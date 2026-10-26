@@ -2,8 +2,8 @@
 Changelog for package statechart_ros_cli
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Forthcoming
------------
+0.1.2 (2026-10-27)
+------------------
 * ``send`` and ``echo`` print ``ignored: <reason>`` for an ignored event (``send`` printed ``handled``, ``echo`` an empty target); ``show`` adds it to the last event.
 
 0.1.1 (2026-10-26)

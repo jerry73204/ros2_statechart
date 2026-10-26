@@ -2,7 +2,7 @@
 <?xml-model href="http://download.ros.org/schema/package_format3.xsd" schematypens="http://www.w3.org/2001/XMLSchema"?>
 <package format="3">
   <name>statechart_ros_msgs</name>
-  <version>0.1.1</version>
+  <version>0.1.2</version>
   <description>Messages, services and the action of ros2_statechart: chart structure, status and transitions, debug services, running a chart as an action.</description>
   <maintainer email="jerry73204@gmail.com">jerry73204</maintainer>
   <license>Apache-2.0</license>

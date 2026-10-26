@@ -2,6 +2,10 @@
 Changelog for package statechart_ros_nav2
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+0.1.2 (2026-10-27)
+------------------
+* No changes; released with statechart_ros 0.1.2.
+
 0.1.1 (2026-10-26)
 ------------------
 * No changes; released with statechart_ros 0.1.1.
