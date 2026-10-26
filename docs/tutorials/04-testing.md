@@ -77,7 +77,7 @@ steps:
     refused: 'paused: resume or stop first'
   - send: resume              # back to TURN through the history state
     expect: [DRAWING, TURN]
-    datamodel: {sides: 2}     # TURN is entered again: its entry runs again
+    datamodel: {sides: 1}     # TURN is entered again; the side is not counted again
   - advance: 1.5
     expect: [FORWARD]
   - send: stop
@@ -113,7 +113,12 @@ def test_properties():
 ```
 
 Good invariants are safety rules (never move while stopped), consistency of
-outputs with states, and bounds on data.
+outputs with states, and bounds on data. `four_sides_at_most` once failed in
+CI with `go`, 11 s, `pause`, `resume`: the chart counted a side on entering
+`TURN`, and resuming into `TURN` through history counted it again (five
+sides). The scenario above had written that double count down as expected;
+the random sequences did not share the assumption. The chart now counts on
+the transition into `TURN` ([tutorial 2](02-nesting-and-history.md)).
 
 ## A parent chart with a child
 

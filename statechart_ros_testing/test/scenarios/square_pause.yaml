@@ -23,7 +23,7 @@ steps:
     refused: 'paused: resume or stop first'
   - send: resume              # back to TURN through the history state
     expect: [DRAWING, TURN]
-    datamodel: {sides: 2}     # TURN is entered again: its entry runs again
+    datamodel: {sides: 1}     # TURN is entered again; the side is not counted again
   - advance: 1.5
     expect: [FORWARD]
   - send: stop

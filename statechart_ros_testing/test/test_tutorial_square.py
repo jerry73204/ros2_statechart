@@ -36,6 +36,18 @@ def test_a_whole_square():
         assert [o.value for o in t.outputs].count({'angular': {'z': 1.5708}}) == 4
 
 
+def test_resuming_into_turn_does_not_count_the_side_again():
+    with chart_under_test(SQUARE) as t:
+        t.send('go')
+        t.advance(11.0)                 # in the fourth TURN
+        assert t.active('TURN') and t.data.sides == 4
+        t.send('pause')
+        t.send('resume')                # back into TURN through history
+        assert t.active('TURN') and t.data.sides == 4
+        t.advance(1.5)
+        assert t.active('IDLE')
+
+
 def test_pause_and_resume_scenario():
     run_scenario(os.path.join(HERE, 'scenarios', 'square_pause.yaml'))
 

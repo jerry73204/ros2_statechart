@@ -46,11 +46,12 @@ which answers them once, and a pause returns to the step it interrupted.
       <ros:on_entry publish="turtle1/cmd_vel" type="geometry_msgs/msg/Twist"
                     value="{linear: {x: 2.0}}"/>
       <ros:after delay="1.5" event="moved"/>
-      <transition event="moved" target="TURN"/>
+      <transition event="moved" target="TURN">
+        <assign location="sides" expr="sides + 1"/>
+      </transition>
     </state>
 
     <state id="TURN">
-      <onentry><assign location="sides" expr="sides + 1"/></onentry>
       <ros:on_entry publish="turtle1/cmd_vel" type="geometry_msgs/msg/Twist"
                     value="{angular: {z: 1.5708}}"/>
       <ros:after delay="1.5" event="turned"/>
@@ -86,7 +87,11 @@ which answers them once, and a pause returns to the step it interrupted.
   remember. A `deep` history remembers the active states at every level
   below, as the patrol of [tutorial 3](03-nav2-patrol.md) does.
 - `sides` is data, not state: pausing keeps it, so the square still has four
-  sides.
+  sides. It is counted on the transition from `FORWARD` to `TURN`, not on
+  entering `TURN` as in tutorial 1: resuming into `TURN` enters it again, and
+  an entry action would count the same side twice. Anything that must happen
+  once per step belongs on the transition into the step, not in its entry.
+  The property test of [tutorial 4](04-testing.md) found this.
 
 How many states and transitions this saves grows with the chart: every state
 added inside `DRAWING` gets `stop` and `pause` without writing them again,
