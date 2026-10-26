@@ -2,8 +2,9 @@
 
 The scripts behind [docs/ENGINE.md](../docs/ENGINE.md), as run on 2026-10-26
 against python-statemachine 3.2.2 (`pip install "python-statemachine[io]==3.2.2"`,
-Python 3.10). They print what the engine did; phase P0 turns each into an
-asserting test under `statechart_ros/test/engine/`.
+Python 3.10). They print what the engine did. Phase P0 turned each into
+asserting tests under `statechart_ros/test/engine/`, which are now the
+reference; the scripts stay as the record of the first exploration.
 
 | Script | Rows |
 |---|---|

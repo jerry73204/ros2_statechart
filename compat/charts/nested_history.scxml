@@ -1,0 +1,34 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<scxml xmlns="http://www.w3.org/2005/07/scxml"
+       xmlns:ros="https://github.com/jerry73204/ros2_statechart/ns/1"
+       version="1.0" datamodel="python" initial="ACTIVE">
+  <ros:model class="turtle_demo.model:Model"/>
+  <ros:subscribe topic="pause" type="std_msgs/msg/Empty" event="pause"/>
+  <ros:subscribe topic="resume" type="std_msgs/msg/Empty" event="resume"/>
+  <datamodel>
+    <data id="laps" expr="0"/>
+  </datamodel>
+  <state id="ACTIVE" initial="PATROL">
+    <history id="ACTIVE_H" type="deep">
+      <transition target="PATROL"/>
+    </history>
+    <state id="PATROL" initial="LEG_A">
+      <state id="LEG_A">
+        <ros:action server="go_a" type="example_interfaces/action/Fibonacci" goal="goal_a"/>
+        <ros:outcome status="succeeded" target="LEG_B"/>
+        <ros:outcome status="*" target="LEG_A"/>
+      </state>
+      <state id="LEG_B">
+        <onentry><assign location="laps" expr="laps + 1"/></onentry>
+        <ros:action server="go_b" type="example_interfaces/action/Fibonacci" goal="goal_b"/>
+        <ros:outcome status="succeeded" target="LEG_A"/>
+        <ros:outcome status="*" target="LEG_B"/>
+      </state>
+    </state>
+    <transition event="pause" target="PAUSED"/>
+  </state>
+  <state id="PAUSED">
+    <ros:ignore event="pause" reason="already paused"/>
+    <transition event="resume" target="ACTIVE_H"/>
+  </state>
+</scxml>

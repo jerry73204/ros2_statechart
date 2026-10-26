@@ -239,8 +239,28 @@ Errors stop the node from starting and fail CI:
 
 The extension follows SCXML's extension rules: its own namespace, and no
 transitions caused by extension content. The W3C schema accepts the
-elements in the places of rule 1. What other tools do with foreign elements
-is undefined by the standard (Appendix A.2); the measured behaviour of Qt
-SCXML, Apache Commons SCXML, scxmlgui and AS2FM is recorded in
-[phases/P0](phases/P0-foundations.md) and kept up to date here. For a tool
-that rejects them, use `export --plain`.
+elements in the places of rule 1 (its extension points validate them
+`lax`ly; `statechart_ros/schema/scxml_ros.xsd` adds this namespace's schema).
+What other tools do with foreign elements is undefined by the standard
+(Appendix A.2). Measured on 2026-10-26 (phase P0) with the three charts of
+[compat/charts](../compat/charts/) (a minimal chart, nested states with deep
+history, and the README example as it stood in P0); the scripts and exact
+versions are in [compat/tools](../compat/tools/README.md). To separate the
+effect of `ros:` elements from that of `datamodel="python"`, which no other
+tool knows, each chart also ran with `datamodel` set to `null` or
+`ecmascript`, with and without its `ros:` elements.
+
+| Tool | Loads | `ros:` elements | Rejects | Keeps `ros:` on save |
+|---|---|---|---|---|
+| W3C schema (xmllint, libxml2) | all three validate | validated by our schema when it is loaded, else skipped (`lax`) | n/a | n/a |
+| Qt SCXML 6.4.2 (`qscxmlc`, `QScxmlStateMachine::fromFile`) | not with `datamodel="python"`; yes with `null` or `ecmascript` | ignored silently; the charts run as their plain controls do | `Unsupported data model 'python' in scxml` (datamodel only) | n/a (no writer) |
+| Qt Creator SCXML editor | not tested: graphical only, no command-line load or save | | | |
+| Apache Commons SCXML 2.0-SNAPSHOT (no 2.0 release exists) | lenient reader: all variants | lenient: ignored with one warning per element; runs as the plain controls | strict reader: `Ignoring unknown or invalid element <model> in namespace ...`; executor: `Unsupported SCXML document datamodel "python"` | no: elements dropped, `xmlns:ros` kept |
+| Apache Commons SCXML 0.9 (2008) | only without a `datamodel` attribute (any value fails; 0.9 predates it) | ignored with one warning per element | n/a | no: elements dropped |
+| scxmlgui (git `1e09202`, `fsm-editor.jar` 2016) | all three, `python` included | kept as each state's other content | none | yes, and the result validates; but `datamodel` is dropped, and `ros:` elements move after the transitions of their state |
+| AS2FM (git `3252344`, 0.0.1, not on PyPI) | none of the three | under `<scxml>`: dropped; inside states: rejected (`unexpected tag on_entry`: it strips namespaces) | also, independent of `ros:`: no `<history>`, no `<parallel>`, requires `name` on `<scxml>` and `type` on `<data>` | no |
+
+For a tool that rejects the extension or the datamodel, use
+`ros2 statechart export --plain`, which writes the expanded document without
+`ros:` elements (the `datamodel` attribute still has to be changed for Qt and
+Commons SCXML, whose guards are then evaluated in their own datamodels).
