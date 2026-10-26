@@ -99,9 +99,35 @@ class FakeHost(Host):
             value = yaml.safe_load(value)
         builder = out.attrs.get('message') or out.attrs.get('request')
         if builder:
-            value = runner.call_model(builder, msg=value, request=value)
+            value = _built_output(out, runner, builder, value)
         target = out.attrs.get(out.action)
         self.outputs.append(Output(out.state, out.when, out.action, target, value))
+
+
+def _built_output(out, runner, builder, value):
+    """
+    Call a ``message=`` / ``request=`` builder as the node does, with a message of the type.
+
+    The recorded value is in the form ``value=`` uses: the ``data`` field alone
+    for a message whose only field it is, else a dictionary of the fields.
+    """
+    type_name = out.attrs.get('type')
+    if not type_name:
+        return runner.call_model(builder, msg=value, request=value)
+    from rosidl_runtime_py.convert import message_to_ordereddict
+    from statechart_ros.host import fill_message
+    from statechart_ros.validate import import_interface
+    if out.action == 'publish':
+        obj = import_interface('msg', type_name)()
+    else:
+        obj = import_interface('srv', type_name).Request()
+    if value is not None:
+        fill_message(obj, value)
+    built = runner.call_model(builder, msg=obj, request=obj)
+    if built is not None:
+        obj = built
+    fields = message_to_ordereddict(obj)
+    return fields['data'] if list(fields) == ['data'] else dict(fields)
 
 
 class Output:
