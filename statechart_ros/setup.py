@@ -20,7 +20,7 @@ package_name = 'statechart_ros'
 
 setup(
     name=package_name,
-    version='0.1.0',
+    version='0.1.1',
     packages=find_packages(exclude=['test']),
     package_data={package_name: ['schema/*.xsd', 'schema/*.md', 'schema/w3c/*.xsd',
                                  'schema/w3c/*.md']},

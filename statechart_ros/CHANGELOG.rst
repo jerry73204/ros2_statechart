@@ -2,6 +2,14 @@
 Changelog for package statechart_ros
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+0.1.1 (2026-10-26)
+------------------
+* ``ros:on_entry`` / ``ros:on_exit`` ``run="method"``: a model method inside the macrostep, with the state, the event and its data.
+* ``ros:refuse`` takes ``cond``; a refusal naming several events refuses each of them (it was reported as handled).
+* ``ros:after`` ``delay`` may name a ``<data>`` value (a ``ros:param``).
+* ``ros:action_server``: ``result_status`` (succeeded, aborted or canceled, chosen by the model) and ``cancel_waits`` (the chart ends a cancelled goal).
+* ``ros:service_server`` event templates with fixed parts, such as ``command.{command}``.
+
 0.1.0 (2026-10-26)
 ------------------
 * First release.

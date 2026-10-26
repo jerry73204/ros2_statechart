@@ -7,7 +7,7 @@ publishes on entry, which topics and services turn into events. The chart is
 run by [python-statemachine](https://github.com/fgmacedo/python-statemachine),
 used as released, inside one ROS 2 node.
 
-Status: 0.1.0, every phase of [docs/phases](docs/phases/) done (P0 to P7). Start with the [tutorials](docs/tutorials/README.md); install from source until the packages reach the ROS apt repositories ([docs/RELEASE.md](docs/RELEASE.md)).
+Status: 0.1.1, every phase of [docs/phases](docs/phases/) done (P0 to P7). Start with the [tutorials](docs/tutorials/README.md); install from source until the packages reach the ROS apt repositories ([docs/RELEASE.md](docs/RELEASE.md)).
 
 ## Why statecharts
 
