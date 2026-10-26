@@ -56,6 +56,30 @@ def fill_message(msg, value):
     return msg
 
 
+def destroy_waitable(node, waitable, delay=1.0):
+    """
+    Destroy an action client or server without racing the executor.
+
+    The executor may be inside a wait that includes the waitable; removing it
+    from the node first and destroying it a little later keeps the executor
+    from taking data from a destroyed handle.
+    """
+    try:
+        node.remove_waitable(waitable)
+    except Exception:  # noqa: B902 - already removed
+        pass
+
+    def destroy():
+        try:
+            waitable.destroy()
+        except Exception:  # noqa: B902 - the node may be gone
+            pass
+
+    timer = threading.Timer(delay, destroy)
+    timer.daemon = True
+    timer.start()
+
+
 class Gate:
     """One goal at a time per action server, released when its cancel is confirmed."""
 

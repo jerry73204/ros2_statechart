@@ -1,0 +1,7 @@
+# Named poses on the map of Nav2's TurtleBot3 sandbox (nav2_bringup
+# maps/tb3_sandbox.yaml): free space between the nine pillars at +-1.1 m.
+frame_id: map
+poses:
+  wp_a: {x: -2.0, y: -0.5, yaw: 0.0}
+  wp_b: {x: 0.55, y: -1.65, yaw: 0.0}
+  wp_c: {x: 0.55, y: 1.65, yaw: 3.1416}

@@ -264,8 +264,10 @@ Errors stop the node from starting and fail CI:
 7. no state has two invokes; no `ros:` element in executable content;
 8. `ros:param` names match `<data>` ids;
 9. no `<send>` with `delay` or `delayexpr` (use `ros:after`); no `<data>` id
-   `state` (the engine's own attribute, ENGINE.md E18) and no name starting
-   `sc_ros_`; state ids are Python identifiers (the engine derives callback
+   `state` (the engine's own attribute, ENGINE.md E18), `event`, `source`,
+   `target`, `transition`, `event_data`, `machine`, `model` (names the engine
+   passes to callbacks, which a datamodel value could not be read under) or
+   `datamodel`, and no name starting `sc_ros_`; state ids are Python identifiers (the engine derives callback
    names such as `on_invoke_<state>` from them).
 
 ## 7. Compatibility with other SCXML tools

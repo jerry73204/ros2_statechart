@@ -1,0 +1,60 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- Every Nav2 kind once, in sequence, against Nav2's loopback simulation. -->
+<scxml xmlns="http://www.w3.org/2005/07/scxml"
+       xmlns:ros="https://github.com/jerry73204/ros2_statechart/ns/1"
+       version="1.0" datamodel="python" initial="ALL" name="all_kinds">
+  <ros:service_server name="~/command" type="statechart_ros_msgs/srv/SendEvent"/>
+  <state id="ALL" initial="ACTIVE">
+  <ros:refuse event="go" reason="busy"/>
+  <state id="ACTIVE">
+    <ros:invoke kind="nav2/active" timeout="180"/>
+    <ros:outcome status="succeeded" target="READY"/>
+    <ros:outcome status="timeout" target="FAILED"/>
+  </state>
+  <state id="READY">
+    <transition event="go" target="TO_POSE"/>
+  </state>
+  <state id="TO_POSE">
+    <ros:invoke kind="nav2/navigate_to_pose" pose="wp_b"/>
+    <ros:outcome status="succeeded" target="THROUGH"/>
+    <ros:outcome status="*" target="FAILED"/>
+  </state>
+  <state id="THROUGH">
+    <ros:invoke kind="nav2/navigate_through_poses" poses="wp_c wp_a"/>
+    <ros:outcome status="succeeded" target="FOLLOW"/>
+    <ros:outcome status="*" target="FAILED"/>
+  </state>
+  <state id="FOLLOW">
+    <ros:invoke kind="nav2/follow_waypoints" poses="wp_b wp_a"/>
+    <ros:outcome status="succeeded" target="SPIN"/>
+    <ros:outcome status="*" target="FAILED"/>
+  </state>
+  <state id="SPIN">
+    <ros:invoke kind="nav2/spin" angle="1.57"/>
+    <ros:outcome status="succeeded" target="BACK_UP"/>
+    <ros:outcome status="*" target="FAILED"/>
+  </state>
+  <state id="BACK_UP">
+    <ros:invoke kind="nav2/back_up" distance="0.2" speed="0.1"/>
+    <ros:outcome status="succeeded" target="WAIT"/>
+    <ros:outcome status="*" target="FAILED"/>
+  </state>
+  <state id="WAIT">
+    <ros:invoke kind="nav2/wait" duration="1.0"/>
+    <ros:outcome status="succeeded" target="DOCK"/>
+    <ros:outcome status="*" target="FAILED"/>
+  </state>
+  <state id="DOCK">
+    <ros:invoke kind="nav2/dock" dock_id="home_dock"/>
+    <ros:outcome status="succeeded" target="UNDOCK"/>
+    <ros:outcome status="*" target="FAILED"/>
+  </state>
+  <state id="UNDOCK">
+    <ros:invoke kind="nav2/undock" dock_type="simple_charging_dock"/>
+    <ros:outcome status="succeeded" target="DONE"/>
+    <ros:outcome status="*" target="FAILED"/>
+  </state>
+  <state id="DONE"><transition event="go" target="TO_POSE"/></state>
+  <state id="FAILED"><transition event="go" target="TO_POSE"/></state>
+  </state>
+</scxml>

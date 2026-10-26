@@ -7,7 +7,7 @@ publishes on entry, which topics and services turn into events. The chart is
 run by [python-statemachine](https://github.com/fgmacedo/python-statemachine),
 used as released, inside one ROS 2 node.
 
-Status: in development. Done: P0 (engine pinned by tests), P1 (loader, validator, `validate` / `diagram` / `export`), P2 (`statechart_node`, turtlesim example); see [docs/phases](docs/phases/).
+Status: in development. Done: P0 (engine pinned by tests), P1 (loader, validator, `validate` / `diagram` / `export`), P2 (`statechart_node`, turtlesim example), P3 (Nav2 kinds, patrol example on Nav2's simulation); see [docs/phases](docs/phases/).
 
 ## Why statecharts
 
@@ -110,7 +110,8 @@ ros2 statechart show /mission               # active states in the terminal
 
 - [docs/DESIGN.md](docs/DESIGN.md): goals, architecture, execution model, Nav2, viewer, testing, packaging.
 - [docs/FORMAT.md](docs/FORMAT.md): the `ros:` extension, element by element, and how it maps onto SCXML.
-- [docs/ENGINE.md](docs/ENGINE.md): what python-statemachine does, verified by probes, and what the design relies on.
+- [docs/ENGINE.md](docs/ENGINE.md): what python-statemachine does, verified by tests, and what the design relies on.
+- [docs/NAV2.md](docs/NAV2.md): the Nav2 kinds, poses, outcomes and error names, the patrol example.
 - [docs/phases/](docs/phases/): the implementation plan, one file per phase.
 
 ## Licence

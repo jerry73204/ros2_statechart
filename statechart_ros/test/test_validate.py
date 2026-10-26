@@ -207,8 +207,8 @@ def test_rule_9_restrictions():
                   '<transition event="t" target="a"/></state>')
     assert any('ros:after' in m for m in found[9])
     found = rules('<datamodel><data id="state" expr="1"/><data id="sc_ros_x" expr="1"/>'
-                  '</datamodel>' + GOOD)
-    assert len(found[9]) == 2
+                  '<data id="target" expr="1"/></datamodel>' + GOOD)
+    assert len(found[9]) == 3
     found = rules('<state id="a-b"><transition event="go" target="a-b"/></state>',
                   initial='a-b')
     assert any('not a Python identifier' in m for m in found[9])

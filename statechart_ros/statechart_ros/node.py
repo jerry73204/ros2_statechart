@@ -35,7 +35,7 @@ from rclpy.lifecycle import Node as LifecycleNode
 from rclpy.lifecycle import TransitionCallbackReturn
 from rclpy.parameter import Parameter
 from statechart_ros import introspection
-from statechart_ros.host import qos_profile, RosHost
+from statechart_ros.host import destroy_waitable, qos_profile, RosHost
 from statechart_ros.loader import ChartError, load_chart
 from statechart_ros.runtime import call_with, ChartRunner, to_json
 from statechart_ros.validate import errors, import_interface, import_model, matches, validate
@@ -424,7 +424,7 @@ class StatechartNode(LifecycleNode):
         server = ActionServer(self, action_type, el.get('name'),
                               execute_callback=execute_callback, goal_callback=goal_callback,
                               cancel_callback=cancel_callback, callback_group=self._group)
-        self._keep(lambda s: s.destroy(), server)
+        self._keep(lambda s: destroy_waitable(self, s), server)
 
     def _action_server_progress(self, record):
         """On the worker: feedback for the active goal, and its result on ``result_on``."""

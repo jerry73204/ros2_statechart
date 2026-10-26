@@ -9,10 +9,29 @@
   <url type="repository">https://github.com/jerry73204/ros2_statechart</url>
   <url type="bugtracker">https://github.com/jerry73204/ros2_statechart/issues</url>
 
+  <exec_depend>statechart_ros</exec_depend>
+  <exec_depend>nav2_msgs</exec_depend>
+  <exec_depend>geometry_msgs</exec_depend>
+  <exec_depend>builtin_interfaces</exec_depend>
+  <exec_depend>std_srvs</exec_depend>
+  <exec_depend>python3-yaml</exec_depend>
+  <exec_depend>rclpy</exec_depend>
+  <!-- the patrol example; its simulation (launch/patrol_sim.launch.py) also needs
+       nav2_bringup and nav2_loopback_sim, which are test dependencies only -->
+  <exec_depend>launch</exec_depend>
+  <exec_depend>launch_ros</exec_depend>
+  <exec_depend>ament_index_python</exec_depend>
+  <exec_depend>sensor_msgs</exec_depend>
+  <exec_depend>std_msgs</exec_depend>
+
   <test_depend>ament_copyright</test_depend>
   <test_depend>ament_flake8</test_depend>
   <test_depend>ament_pep257</test_depend>
   <test_depend>python3-pytest</test_depend>
+  <test_depend>action_msgs</test_depend>
+  <test_depend>launch_testing</test_depend>
+  <test_depend>launch_testing_ros</test_depend>
+  <test_depend>statechart_ros_msgs</test_depend>
 
   <export>
     <build_type>ament_python</build_type>

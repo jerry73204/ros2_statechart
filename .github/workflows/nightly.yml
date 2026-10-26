@@ -1,0 +1,50 @@
+name: Nightly simulation
+
+on:
+  schedule:
+    - cron: '30 2 * * *'
+  workflow_dispatch:
+
+jobs:
+  nav2-sim:
+    name: Charts against Nav2 in simulation
+    runs-on: ubuntu-24.04
+    container:
+      image: ubuntu:noble
+    timeout-minutes: 60
+    defaults:
+      run:
+        shell: bash
+    steps:
+      - uses: ros-tooling/setup-ros@0.7.19
+        with:
+          required-ros-distributions: jazzy
+      - uses: actions/checkout@v7.0.1
+        with:
+          path: ws/src/ros2_statechart
+      - name: Install dependencies
+        run: |
+          apt-get update
+          apt-get install -y ros-jazzy-nav2-bringup ros-jazzy-nav2-loopback-sim
+          source /opt/ros/jazzy/setup.bash
+          rosdep update
+          rosdep install -y --from-paths ws/src --ignore-src --rosdistro jazzy
+      - name: Build
+        run: |
+          source /opt/ros/jazzy/setup.bash
+          cd ws
+          colcon build --event-handlers console_cohesion+
+      - name: Every Nav2 kind
+        run: |
+          source ws/install/setup.bash
+          launch_test ws/src/ros2_statechart/statechart_ros_nav2/test_sim/sim_all_kinds.py
+      - name: Patrol scenario
+        run: |
+          source ws/install/setup.bash
+          launch_test ws/src/ros2_statechart/statechart_ros_nav2/test_sim/sim_patrol.py
+      - name: Logs
+        if: failure()
+        uses: actions/upload-artifact@v7.0.2
+        with:
+          name: ros-logs
+          path: ~/.ros/log

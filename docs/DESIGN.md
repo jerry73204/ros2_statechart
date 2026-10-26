@@ -167,20 +167,31 @@ reuse the page's components later.
 
 ## 8. Nav2 integration (`statechart_ros_nav2`)
 
+Reference: [NAV2.md](NAV2.md).
+
 - **Kinds** for `ros:invoke`: `nav2/navigate_to_pose`,
   `nav2/navigate_through_poses`, `nav2/follow_waypoints`, `nav2/dock`,
   `nav2/undock`, `nav2/spin`, `nav2/back_up`, `nav2/wait`, each with typed
-  attributes (pose from a datamodel value or a named pose, dock id or pose,
-  staging) so most charts need no goal builder.
+  attributes (poses by name from the datamodel or from the YAML file of the
+  node parameter `named_poses`, dock id or pose, staging, distances) so most
+  charts need no goal builder; a `goal` builder still completes the goal.
 - **Error codes** of each Nav2 action mapped to names in the outcome data
-  (`error_name`), so a guard can test `failed_to_detect_dock` instead of 904.
-- **`nav2/active`**: an invoke that succeeds once the Nav2 lifecycle nodes
-  are active, for an initialisation state.
+  (`error_name`, plus `error_source`, the action declaring the code, since a
+  navigator reports the code of a failing behavior-tree action), read from
+  the installed `nav2_msgs`, so a guard can test `failed_to_detect_dock`
+  instead of 904.
+- **`nav2/active`**: an invoke that succeeds once Nav2's lifecycle managers
+  (`<manager>/is_active`) report their nodes active, for an initialisation
+  state.
 - **Feedback** summarised into the status (distance remaining, recoveries,
   docking phase) for the viewer.
 - **Division of work**: recoveries, replanning and the docking procedure stay
   in Nav2. A chart decides which goal to send and what to do with its
   outcome.
+- **Simulation**: the example and the nightly tests use Nav2's TurtleBot3
+  loopback simulation (`nav2_loopback_sim`: no Gazebo, so it runs on CI
+  machines without a GPU), with one dock added to the docking server's
+  parameters and dock detection off.
 
 ## 9. Extending with user packages
 

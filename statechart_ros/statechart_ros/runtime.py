@@ -113,8 +113,21 @@ class ChartModel:
             return self._outcome_condition(out)
         user = self.__dict__.get('_user')
         if user is not None and hasattr(user, name):
-            return getattr(user, name)
+            value = getattr(user, name)
+            if callable(value):
+                return self._with_datamodel(value)
+            return value
         raise AttributeError(name)
+
+    def _with_datamodel(self, fn):
+        """Wrap a model method for the engine so that it can ask for ``datamodel``."""
+        model = self
+
+        def method(*args, **kwargs):
+            return call_with(fn, dict(kwargs, datamodel=model))
+
+        method.__name__ = getattr(fn, '__name__', 'method')
+        return method
 
     def _outcome_condition(self, out):
         statuses = set(out.statuses)

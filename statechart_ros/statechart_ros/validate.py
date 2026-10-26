@@ -35,7 +35,10 @@ SCHEMA_DIR = os.path.join(os.path.dirname(__file__), 'schema')
 MAX_CONFIGURATIONS = 20000
 SYSTEM_NAMES = {'In', '_event', '_name', '_sessionid', '_ioprocessors', 'True', 'False',
                 'None', 'true', 'false', 'null'}
-RESERVED_DATA = {'state'}
+# The engine keeps the configuration in `state` and passes the others to callbacks
+# itself (ENGINE.md E18); a data item with one of these names is never readable.
+RESERVED_DATA = {'state', 'source', 'target', 'event', 'event_data', 'machine', 'model',
+                 'transition', 'datamodel'}
 
 _schema = None
 

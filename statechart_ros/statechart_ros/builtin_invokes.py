@@ -106,7 +106,8 @@ class ActionKind(InvokeKind):
     def teardown(self):
         client = getattr(self, 'client', None)
         if client is not None:
-            client.destroy()
+            from statechart_ros.host import destroy_waitable
+            destroy_waitable(self.host.node, client)
             self.client = None
 
     def make_goal(self, invocation):

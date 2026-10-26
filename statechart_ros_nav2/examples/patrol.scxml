@@ -1,0 +1,139 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- A patrol robot: four concerns as four regions of one parallel state.
+     mode    AUTO or PAUSED (commands pause and resume)
+     safety  CLEAR or STOPPED (an emergency stop topic)
+     power   POWER_OK or POWER_LOW (a battery topic, thresholds as parameters)
+     task    WAIT_NAV2 (until Nav2 is active), IDLE, WORK (patrol legs, or a charge
+             cycle when power is low) or HOLD.
+     The task region follows the others through In(...) guards: it holds while
+     the robot is paused or stopped and returns to the remembered leg through
+     deep history; it docks when power is low and resumes the patrol after. -->
+<scxml xmlns="http://www.w3.org/2005/07/scxml"
+       xmlns:ros="https://github.com/jerry73204/ros2_statechart/ns/1"
+       version="1.0" datamodel="python" initial="run" name="patrol">
+
+  <ros:model class="statechart_ros_nav2.examples.patrol:Patrol"/>
+  <ros:param name="battery_low"/>
+  <ros:param name="battery_full"/>
+  <ros:subscribe topic="battery_state" type="sensor_msgs/msg/BatteryState" event="battery"
+                 data="battery_data"/>
+  <ros:subscribe topic="e_stop" type="std_msgs/msg/Bool" event="e_stop" when="pressed"/>
+  <ros:subscribe topic="e_stop" type="std_msgs/msg/Bool" event="e_stop_released"
+                 when="released"/>
+  <ros:service_server name="~/command" type="statechart_ros_msgs/srv/SendEvent"/>
+
+  <datamodel>
+    <data id="battery_low" expr="0.3"/>
+    <data id="battery_full" expr="0.9"/>
+    <data id="laps" expr="0"/>
+  </datamodel>
+
+  <parallel id="run">
+
+    <state id="mode" initial="AUTO">
+      <state id="AUTO">
+        <transition event="pause" target="PAUSED"/>
+        <ros:ignore event="resume" reason="not paused"/>
+      </state>
+      <state id="PAUSED">
+        <transition event="resume" target="AUTO"/>
+        <ros:ignore event="pause" reason="already paused"/>
+      </state>
+    </state>
+
+    <state id="safety" initial="CLEAR">
+      <state id="CLEAR">
+        <transition event="e_stop" target="STOPPED"/>
+        <ros:ignore event="e_stop_released"/>
+      </state>
+      <state id="STOPPED">
+        <transition event="e_stop_released" target="CLEAR"/>
+        <ros:ignore event="e_stop"/>
+      </state>
+    </state>
+
+    <state id="power" initial="POWER_OK">
+      <state id="POWER_OK">
+        <transition event="battery" cond="is_low" target="POWER_LOW"/>
+        <ros:ignore event="battery" reason="not low"/>
+      </state>
+      <state id="POWER_LOW">
+        <transition event="battery" cond="is_charged" target="POWER_OK"/>
+        <ros:ignore event="battery" reason="not charged yet"/>
+      </state>
+    </state>
+
+    <state id="task" initial="WAIT_NAV2">
+      <state id="WAIT_NAV2">
+        <ros:invoke kind="nav2/active" timeout="120"/>
+        <ros:outcome status="succeeded" target="IDLE"/>
+        <ros:outcome status="timeout" target="WAIT_NAV2"/>
+        <ros:refuse event="start" reason="Nav2 is not active yet"/>
+        <ros:refuse event="cancel" reason="no task"/>
+      </state>
+
+      <state id="IDLE">
+        <transition event="start" cond="In('AUTO') and In('CLEAR')" target="WORK"/>
+        <ros:refuse event="start" reason="paused or stopped"/>
+        <ros:refuse event="cancel" reason="no task"/>
+      </state>
+
+      <state id="WORK" initial="PATROL">
+        <history id="WORK_H" type="deep">
+          <transition target="PATROL"/>
+        </history>
+        <transition cond="In('PAUSED') or In('STOPPED')" target="HOLD"/>
+        <transition event="cancel" target="IDLE"/>
+        <ros:refuse event="start" reason="a patrol is running"/>
+
+        <state id="PATROL" initial="TO_A">
+          <history id="PATROL_H" type="shallow">
+            <transition target="TO_A"/>
+          </history>
+          <transition cond="In('POWER_LOW')" target="CHARGE"/>
+          <state id="TO_A">
+            <ros:invoke kind="nav2/navigate_to_pose" pose="wp_a"/>
+            <ros:outcome status="*" target="TO_B"/>
+          </state>
+          <state id="TO_B">
+            <ros:invoke kind="nav2/navigate_to_pose" pose="wp_b"/>
+            <ros:outcome status="*" target="TO_C"/>
+          </state>
+          <state id="TO_C">
+            <ros:invoke kind="nav2/navigate_to_pose" pose="wp_c"/>
+            <onexit><assign location="laps" expr="laps + 1"/></onexit>
+            <ros:outcome status="*" target="TO_A"/>
+          </state>
+        </state>
+
+        <state id="CHARGE" initial="DOCKING">
+          <state id="DOCKING">
+            <ros:invoke kind="nav2/dock" dock_id="home_dock"/>
+            <ros:outcome status="succeeded" target="CHARGING"/>
+            <ros:outcome status="*" target="DOCK_FAILED"/>
+          </state>
+          <state id="CHARGING">
+            <ros:on_entry publish="charging" type="std_msgs/msg/Bool" value="true"/>
+            <ros:on_exit publish="charging" type="std_msgs/msg/Bool" value="false"/>
+            <transition cond="In('POWER_OK')" target="UNDOCKING"/>
+          </state>
+          <state id="UNDOCKING">
+            <ros:invoke kind="nav2/undock" dock_type="simple_charging_dock"/>
+            <ros:outcome status="succeeded" target="PATROL_H"/>
+            <ros:outcome status="*" target="DOCK_FAILED"/>
+          </state>
+          <state id="DOCK_FAILED">
+            <ros:after delay="5" event="retry_dock"/>
+            <transition event="retry_dock" target="DOCKING"/>
+          </state>
+        </state>
+      </state>
+
+      <state id="HOLD">
+        <transition cond="In('AUTO') and In('CLEAR')" target="WORK_H"/>
+        <transition event="cancel" target="IDLE"/>
+        <ros:refuse event="start" reason="paused or stopped: resume first"/>
+      </state>
+    </state>
+  </parallel>
+</scxml>
