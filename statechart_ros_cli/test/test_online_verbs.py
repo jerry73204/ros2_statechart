@@ -69,8 +69,13 @@ def ros2(*args, timeout=60):
 
 
 def test_list(chart):
-    result = ros2('list', '--wait', '2')
-    assert result.returncode == 0, result.stderr
+    # Discovery from a fresh process can take longer than one wait on a
+    # loaded CI runner: ask again before failing.
+    for _ in range(3):
+        result = ros2('list', '--wait', '3')
+        assert result.returncode == 0, result.stderr
+        if '/cli_chart' in result.stdout.split():
+            break
     assert '/cli_chart' in result.stdout.split()
 
 
