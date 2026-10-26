@@ -2,6 +2,11 @@
 Changelog for package statechart_ros_viewer
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+Forthcoming
+-----------
+* Fold a compound or parallel state into one box by double-clicking it; *Expand all*, *Fit*, and a *Notes* switch (off by default above 25 states); remembered per chart in the browser.
+* A new transition log when the chart counts from the start again: a bag played again, or a restarted chart node (the log ran on into the new run).
+
 0.1.3 (2026-10-27)
 ------------------
 * No changes; released with statechart_ros_testing 0.1.3.

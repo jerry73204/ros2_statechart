@@ -114,6 +114,45 @@ def test_page_shows_structure_and_live_state(setup, browser):
     page.close()
 
 
+def test_fold_states_and_hide_notes(setup, browser):
+    page = browser.new_page()
+    errors = []
+    page.on('pageerror', lambda e: errors.append(str(e)))
+    page.goto(setup.url + '/#/demo')
+    expect(page.locator('#diagram [data-id="IDLE"]')).to_be_visible(timeout=15000)
+    assert wait_for(lambda: 'IDLE' in active_ids(page))
+
+    # Notes: on for a small chart, and switched off from the header.
+    expect(page.locator('#notes-toggle')).to_be_checked()
+    expect(page.locator('#diagram [data-id="BUSY"] text.note')).to_have_count(1)
+    page.uncheck('#notes-toggle')
+    expect(page.locator('#diagram [data-id="BUSY"] text.note')).to_have_count(0)
+
+    # Double-click a compound state: one box, still lit while it is active.
+    page.locator('#diagram .cluster[data-id="task"] > rect').dblclick(position={'x': 6, 'y': 6})
+    expect(page.locator('#diagram .state.collapsed[data-id="task"]')).to_be_visible()
+    expect(page.locator('#diagram [data-id="IDLE"]')).to_have_count(0)
+    assert wait_for(lambda: 'task' in active_ids(page))
+    page.select_option('#send-event', 'go')
+    page.click('#send-form button')
+    expect(page.locator('#log li').first).to_contain_text('go')
+    assert 'task' in active_ids(page)
+
+    # Remembered in this browser, per chart.
+    page.reload()
+    expect(page.locator('#diagram .state.collapsed[data-id="task"]')).to_be_visible(timeout=15000)
+    expect(page.locator('#notes-toggle')).not_to_be_checked()
+    page.locator('#diagram .state.collapsed[data-id="task"] > rect').dblclick()
+    expect(page.locator('#diagram [data-id="BUSY"]')).to_be_visible()
+    page.locator('#diagram .cluster[data-id="mode"] > rect').dblclick(position={'x': 6, 'y': 6})
+    page.click('#expand-button')
+    expect(page.locator('#diagram [data-id="AUTO"]')).to_be_visible()
+    page.check('#notes-toggle')
+    page.click('#fit-button')
+    assert errors == []
+    page.close()
+
+
 def test_child_chart_live_inside_its_state(browser, tmp_path):
     setup = Setup(write_composed(tmp_path))
     try:

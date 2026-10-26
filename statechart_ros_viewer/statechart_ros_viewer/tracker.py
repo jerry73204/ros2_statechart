@@ -127,11 +127,16 @@ class ChartTracker:
             self._emit('charts', chart_node, self.summaries())
 
         def on_status(msg):
-            chart.status = status_dict(msg)
+            status = status_dict(msg)
+            if chart.status is not None and status['sequence'] < chart.status['sequence']:
+                self._new_run(chart_node, chart)
+            chart.status = status
             self._emit('status', chart_node, chart.status)
 
         def on_transition(msg):
             record = transition_dict(msg)
+            if chart.transitions and record['sequence'] <= chart.transitions[-1]['sequence']:
+                self._new_run(chart_node, chart)
             chart.transitions.append(record)
             self._emit('transition', chart_node, record)
 
@@ -144,6 +149,16 @@ class ChartTracker:
                                           on_transition, 100),
         ]
         chart.client = self.node.create_client(SendEvent, f'{chart_node}/send_event')
+
+    def _new_run(self, chart_node, chart):
+        """
+        Start a new transition log: the chart's macrosteps count from the start again.
+
+        That happens when the chart node restarts and when a bag of it is played
+        again; the log of the earlier run would otherwise run on into the new one.
+        """
+        chart.transitions.clear()
+        self._emit('run', chart_node, {})
 
     def summaries(self):
         with self.lock:

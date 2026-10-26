@@ -23,7 +23,13 @@ The page shows, for the chart chosen at the top (or named in the URL,
   states' ids qualified (`DOCKING/APPROACH`), the `ros:` annotations
   under each state's name (its invoke, outputs, timeouts, refusals),
   transitions labelled with their event and guard, outcomes with their
-  statuses. Drag to pan, scroll to zoom;
+  statuses. Drag to pan, scroll to zoom, *Fit* to see it all again;
+- **large charts**: double-click a compound or parallel state to fold it into
+  one box (it stays lit while it is active, and its arrows go to the box),
+  and again to open it; *Expand all* opens every folded state. *Notes*
+  shows or hides the annotations under each name; a chart with more than 25
+  states opens without them. Folded states and the notes switch are
+  remembered per chart in the browser;
 - **live state**: active states are lit; the transitions an event took
   flash;
 - **running work**: each invoke with its elapsed time and its last feedback
@@ -59,7 +65,9 @@ ros2 bag play --delay 3 my_run          # the delay lets the viewer subscribe fi
 ```
 
 The page then shows the run as it happened, and keeps the last status when
-the bag ends.
+the bag ends. Playing the bag again starts a new transition log, as does a
+chart node that restarts: the viewer notices that the chart counts its
+events from the start again.
 
 ## Terminal: `ros2 statechart`
 

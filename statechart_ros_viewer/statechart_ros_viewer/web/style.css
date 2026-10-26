@@ -25,6 +25,8 @@ h2 { font-size: 12px; text-transform: uppercase; letter-spacing: .04em; color: v
 select, input, button { font: inherit; color: inherit; background: var(--bg);
                         border: 1px solid var(--line); border-radius: 4px; padding: 3px 6px; }
 button { cursor: pointer; }
+.tools { display: flex; align-items: center; gap: 8px; font-size: 13px; }
+.tools input { padding: 0; }
 .muted { color: var(--muted); }
 .pill { margin-left: auto; padding: 1px 8px; border-radius: 10px; font-size: 12px;
         border: 1px solid var(--line); }
@@ -60,6 +62,8 @@ ul.compact, ol { margin: 0; padding-left: 18px; }
 .cluster.parallel > rect { fill: var(--parallel); stroke-dasharray: 5 4; }
 .state > rect { fill: var(--state); stroke: var(--line); stroke-width: 1.2; }
 .state.final > rect { stroke-width: 3; stroke-opacity: .6; }
+.state.collapsed > rect { fill: var(--cluster); stroke-width: 2; }
+#diagram { user-select: none; }
 .state text, .cluster text { fill: var(--text); font-size: 12px; }
 text.name { font-weight: 600; }
 text.note { fill: var(--muted); font-size: 11px; }

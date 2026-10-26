@@ -9,7 +9,11 @@ const SVG = 'http://www.w3.org/2000/svg';
 const view = {
   charts: [], node: null, structure: null, status: null, statusWall: 0,
   transitions: [], past: null, layout: null, viewBox: null,
+  collapsed: new Set(), notes: true,
 };
+
+// A chart with more states than this opens without the notes under each name.
+const NOTES_UP_TO = 25;
 
 const $ = (id) => document.getElementById(id);
 const el = (tag, attrs = {}, parent = null) => {
@@ -55,16 +59,30 @@ function layoutChart(structure) {
     if (!children.has(p)) children.set(p, []);
     children.get(p).push(s.id);
   }
-  const isCluster = (id) => (children.get(id) || []).length > 0;
+  const hasChildren = (id) => (children.get(id) || []).length > 0;
+  const collapsed = (id) => hasChildren(id) && view.collapsed.has(id);
+  // A state inside a collapsed one is drawn as the outermost collapsed ancestor.
+  const rep = (id) => {
+    let shown = id;
+    for (let s = states.get(id); s && s.parent; s = states.get(s.parent)) {
+      if (collapsed(s.parent)) shown = s.parent;
+    }
+    return shown;
+  };
+  const visible = structure.states.filter((s) => rep(s.id) === s.id);
+  const isCluster = (id) => hasChildren(id) && !collapsed(id);
   const title = (id) => `${id}::title`;
   const entry = (id) => (isCluster(id) ? title(id) : id);
+  const countInside = (id) => (children.get(id) || [])
+    .reduce((n, k) => n + 1 + countInside(k), 0);
 
   const g = new dagre.graphlib.Graph({ compound: true, multigraph: true });
   g.setGraph({ rankdir: 'TB', nodesep: 26, ranksep: 34, edgesep: 12, marginx: 24, marginy: 24 });
   g.setDefaultEdgeLabel(() => ({}));
 
-  for (const s of structure.states) {
-    const notes = notesOf(s).map((n) => truncate(n));
+  for (const s of visible) {
+    const notes = view.notes ? notesOf(s).map((n) => truncate(n)) : [];
+    if (collapsed(s.id)) notes.unshift(`+ ${countInside(s.id)} states inside`);
     const width = Math.max(measure(s.id, true), ...notes.map((n) => measure(n) * 0.95), 30) + 22;
     const height = 24 + notes.length * 14;
     if (isCluster(s.id)) {
@@ -78,7 +96,7 @@ function layoutChart(structure) {
     }
     if (s.parent) g.setParent(s.id, s.parent);
   }
-  for (const s of structure.states) {
+  for (const s of visible) {
     if (!isCluster(s.id)) continue;
     const kids = children.get(s.id).filter((k) => states.get(k).kind !== 'history');
     const initial = s.kind === 'parallel' ? [] : (s.initial.length ? s.initial : kids.slice(0, 1));
@@ -89,25 +107,33 @@ function layoutChart(structure) {
                 `structure:${s.id}:${k}`);
     }
   }
+  const drawn = new Set();
   structure.transitions.forEach((t, i) => {
     if (!t.targets.length || !states.has(t.source)) return;
-    for (const target of t.targets) {
-      if (!states.has(target)) continue;
+    const source = rep(t.source);
+    for (const real of t.targets) {
+      if (!states.has(real)) continue;
+      const target = rep(real);
+      // an arrow that stays inside a folded state (a real self-loop is kept)
+      if (source === target && (source !== t.source || target !== real)) continue;
       const label = truncate(t.origin === 'outcome' ? t.label
                                                      : t.event + (t.cond ? ` [${t.cond}]` : ''), 40);
-      g.setEdge(entry(t.source), entry(target),
+      const key = `${source}|${target}|${label}`;
+      if (drawn.has(key)) continue;
+      drawn.add(key);
+      g.setEdge(entry(source), entry(target),
                 { label, width: measure(label) * 0.9 + 6, height: 14, labelpos: 'c',
-                  index: i, source: t.source, target, origin: t.origin },
-                `t${i}:${target}`);
+                  index: i, source, target, origin: t.origin },
+                `t${i}:${real}`);
     }
   });
   const initial = structure.initial[0];
   if (initial && states.has(initial)) {
     g.setNode('::start', { width: 12, height: 12, start: true });
-    g.setEdge('::start', entry(initial), { initial: true }, 'start');
+    g.setEdge('::start', entry(rep(initial)), { initial: true }, 'start');
   }
   dagre.layout(g);
-  return { g, states, children, isCluster };
+  return { g, states, children, isCluster, visible, rep, collapsed, hasChildren };
 }
 
 // ---------------------------------------------------------------- drawing
@@ -139,7 +165,7 @@ function drawChart(structure) {
   if (!structure) return;
   const layout = layoutChart(structure);
   view.layout = layout;
-  const { g, states, isCluster } = layout;
+  const { g, states, isCluster, visible, collapsed } = layout;
 
   const defs = el('defs', {}, svg);
   const marker = el('marker', { id: 'arrow', viewBox: '0 0 10 10', refX: 9, refY: 5,
@@ -150,7 +176,7 @@ function drawChart(structure) {
   const edges = el('g', {}, root);
   const nodes = el('g', {}, root);
 
-  const clusterIds = structure.states.filter((s) => isCluster(s.id))
+  const clusterIds = visible.filter((s) => isCluster(s.id))
     .sort((a, b) => depthOf(states, a.id) - depthOf(states, b.id));
   for (const s of clusterIds) {
     const n = g.node(s.id);
@@ -184,7 +210,7 @@ function drawChart(structure) {
     }
   }
 
-  for (const s of structure.states) {
+  for (const s of visible) {
     if (isCluster(s.id)) continue;
     const n = g.node(s.id);
     if (s.kind === 'history') {
@@ -194,7 +220,8 @@ function drawChart(structure) {
       tx.textContent = s.history === 'deep' ? 'H*' : 'H';
       continue;
     }
-    const grp = el('g', { class: `state ${s.kind}`, 'data-id': s.id }, nodes);
+    const folded = collapsed(s.id) ? ' collapsed' : '';
+    const grp = el('g', { class: `state ${s.kind}${folded}`, 'data-id': s.id }, nodes);
     el('rect', { x: n.x - n.width / 2, y: n.y - n.height / 2, width: n.width,
                  height: n.height, rx: 7 }, grp);
     const name = el('text', { x: n.x, y: n.y - n.height / 2 + 16, 'text-anchor': 'middle',
@@ -233,12 +260,14 @@ function highlight(active) {
 }
 
 function flash(record) {
+  const rep = view.layout ? view.layout.rep : (id) => id;
   for (const taken of record.taken || []) {
     const [source, targets] = taken.split(' -> ');
     for (const target of (targets || '').split(', ')) {
+      if (!target.trim()) continue;
       for (const edge of document.querySelectorAll('#diagram .edge')) {
-        if (edge.getAttribute('data-source') === source.trim() &&
-            edge.getAttribute('data-target') === target.trim()) {
+        if (edge.getAttribute('data-source') === rep(source.trim()) &&
+            edge.getAttribute('data-target') === rep(target.trim())) {
           edge.classList.add('flash');
           setTimeout(() => edge.classList.remove('flash'), 1500);
         }
@@ -377,6 +406,53 @@ function renderCharts() {
   if (view.node) select.value = view.node;
 }
 
+// ---------------------------------------------------------------- options
+
+// What the viewer remembers per chart in this browser: folded states and notes.
+function optionsKey() {
+  return `statechart-viewer:${view.node}`;
+}
+
+function loadOptions() {
+  const count = view.structure ? view.structure.states.length : 0;
+  view.collapsed = new Set();
+  view.notes = count <= NOTES_UP_TO;
+  try {
+    const saved = JSON.parse(localStorage.getItem(optionsKey()) || 'null');
+    if (saved) {
+      view.collapsed = new Set(saved.collapsed || []);
+      view.notes = !!saved.notes;
+    }
+  } catch (err) { /* storage may be unavailable */ }
+  $('notes-toggle').checked = view.notes;
+}
+
+function saveOptions() {
+  try {
+    localStorage.setItem(optionsKey(), JSON.stringify(
+      { collapsed: [...view.collapsed], notes: view.notes }));
+  } catch (err) { /* storage may be unavailable */ }
+}
+
+function redraw() {
+  saveOptions();
+  drawChart(view.structure);
+}
+
+function toggleCollapsed(id) {
+  if (!view.layout || !view.layout.hasChildren(id)) return;
+  if (view.collapsed.has(id)) view.collapsed.delete(id);
+  else view.collapsed.add(id);
+  redraw();
+}
+
+function fit() {
+  if (!view.layout) return;
+  const graph = view.layout.g.graph();
+  view.viewBox = { x: 0, y: 0, w: Math.max(graph.width, 100), h: Math.max(graph.height, 100) };
+  applyViewBox();
+}
+
 // ---------------------------------------------------------------- data flow
 
 async function selectChart(node) {
@@ -403,6 +479,7 @@ async function selectChart(node) {
     view.transitions = snap.transitions || [];
   }
   $('chart-source').textContent = view.structure ? view.structure.source : '';
+  loadOptions();
   drawChart(view.structure);
   renderStatus();
   renderLog();
@@ -436,7 +513,9 @@ function connect() {
   source.addEventListener('structure', (e) => {
     const m = JSON.parse(e.data);
     if (m.node !== view.node) return;
+    const first = !view.structure;
     view.structure = m.payload;
+    if (first) loadOptions();
     drawChart(view.structure);
     renderSend();
   });
@@ -447,6 +526,13 @@ function connect() {
     view.statusWall = Date.now() / 1000;
     renderStatus();
     if (!view.past) highlight(view.status.active);
+  });
+  source.addEventListener('run', (e) => {
+    // The chart counts from the start again (restarted, or a bag played again).
+    if (JSON.parse(e.data).node !== view.node) return;
+    view.transitions = [];
+    renderLog();
+    goLive();
   });
   source.addEventListener('transition', (e) => {
     const m = JSON.parse(e.data);
@@ -478,6 +564,11 @@ function setupPanZoom() {
   }, { passive: false });
   svg.addEventListener('mousedown', (e) => {
     drag = { x: e.clientX, y: e.clientY, v: { ...view.viewBox } };
+  });
+  // Double-click a compound state to fold it into one box, or to open it again.
+  svg.addEventListener('dblclick', (e) => {
+    const target = e.target.closest('[data-id]');
+    if (target) toggleCollapsed(target.getAttribute('data-id'));
   });
   window.addEventListener('mouseup', () => { drag = null; });
   window.addEventListener('mousemove', (e) => {
@@ -517,6 +608,9 @@ function setupSend() {
 window.addEventListener('DOMContentLoaded', async () => {
   $('chart-select').addEventListener('change', (e) => selectChart(e.target.value));
   $('live-button').addEventListener('click', goLive);
+  $('notes-toggle').addEventListener('change', (e) => { view.notes = e.target.checked; redraw(); });
+  $('fit-button').addEventListener('click', fit);
+  $('expand-button').addEventListener('click', () => { view.collapsed.clear(); redraw(); });
   setupPanZoom();
   setupSend();
   setInterval(renderInvokes, 1000);
@@ -526,4 +620,4 @@ window.addEventListener('DOMContentLoaded', async () => {
 });
 
 // For tests and debugging in a browser console.
-window.statechartViewer = { view, highlight, selectChart, goLive };
+window.statechartViewer = { view, highlight, selectChart, goLive, toggleCollapsed, fit };
