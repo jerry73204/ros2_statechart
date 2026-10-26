@@ -2,6 +2,10 @@
 Changelog for package python_statemachine_vendor
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+0.1.3 (2026-10-27)
+------------------
+* No changes; released with statechart_ros_testing 0.1.3.
+
 0.1.2 (2026-10-27)
 ------------------
 * No changes; released with statechart_ros 0.1.2.

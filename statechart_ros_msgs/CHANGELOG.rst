@@ -2,6 +2,10 @@
 Changelog for package statechart_ros_msgs
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+0.1.3 (2026-10-27)
+------------------
+* No changes; released with statechart_ros_testing 0.1.3.
+
 0.1.2 (2026-10-27)
 ------------------
 * ``ignored`` in ``Transition``, ``StatechartStatus`` and the ``SendEvent`` reply: the reason when a ``ros:ignore`` matched.

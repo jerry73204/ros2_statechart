@@ -2,6 +2,10 @@
 Changelog for package statechart_ros
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+0.1.3 (2026-10-27)
+------------------
+* No changes; released with statechart_ros_testing 0.1.3.
+
 0.1.2 (2026-10-27)
 ------------------
 * An event a ``ros:ignore`` matched reports its reason as ``ignored`` (``EventResult``, the transition log, the status, ``SendEvent`` replies and reply builders); ``handled`` stays true.
