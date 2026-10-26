@@ -39,6 +39,7 @@ setup(
     ),
     license='Apache-2.0',
     tests_require=['pytest'],
+    extras_require={'test': ['pytest']},
     entry_points={
         'console_scripts': [
             'fake_battery = statechart_ros_nav2.examples.fake_battery:main',
