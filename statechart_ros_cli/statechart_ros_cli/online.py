@@ -90,7 +90,8 @@ def format_tree(structure, status, now=None):
     walk('', 0)
     if status is not None:
         lines.append(f'last event: {status.last_event or "-"}'
-                     + (f' (refused: {status.refusal})' if status.refusal else ''))
+                     + (f' (refused: {status.refusal})' if status.refusal else '')
+                     + (f' (ignored: {status.ignored})' if status.ignored else ''))
         for d in status.data:
             lines.append(f'  {d.key} = {d.json}')
     return '\n'.join(lines)
@@ -103,6 +104,8 @@ def format_transition(msg):
         what = f'refused: {msg.refusal}'
     elif not msg.handled:
         what = 'not handled'
+    elif msg.ignored:
+        what = f'ignored: {msg.ignored}'
     else:
         what = '; '.join(msg.taken) or 'handled'
     data = f' {msg.data}' if msg.data else ''

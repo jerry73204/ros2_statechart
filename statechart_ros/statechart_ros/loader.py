@@ -40,6 +40,7 @@ ROS_NS = 'https://github.com/jerry73204/ros2_statechart/ns/1'
 SCXML_NS = 'http://www.w3.org/2005/07/scxml'
 PREFIX = 'sc_ros_'
 REFUSAL_VAR = 'sc_ros_refusal'
+IGNORE_VAR = 'sc_ros_ignored'
 STATE_TAGS = ('state', 'parallel', 'final')
 IDENTIFIER = re.compile(r'^[A-Za-z][A-Za-z0-9_]*$')
 
@@ -730,10 +731,13 @@ def _expand(spec, root, params):
             replacement.set('event', el.get('event'))
             if el.get('cond'):
                 replacement.set('cond', el.get('cond'))
+            assign = etree.SubElement(replacement, _q('assign'))
             if tag == 'refuse':
-                assign = etree.SubElement(replacement, _q('assign'))
                 assign.set('location', REFUSAL_VAR)
                 assign.set('expr', repr(el.get('reason') or ''))
+            else:
+                assign.set('location', IGNORE_VAR)
+                assign.set('expr', repr(el.get('reason') or 'ignored'))
             spec.transitions.append(TransitionInfo(
                 source=state, events=tuple(el.get('event').split()), cond=el.get('cond'),
                 targets=(),
@@ -744,6 +748,7 @@ def _expand(spec, root, params):
         else:
             _remove(el)
     _declare_data(engine, REFUSAL_VAR, repr(''))
+    _declare_data(engine, IGNORE_VAR, repr(''))
     for name, value in params.items():
         if name in spec.data:
             _set_data(engine, name, repr(value))

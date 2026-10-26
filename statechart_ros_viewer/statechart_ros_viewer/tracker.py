@@ -42,7 +42,7 @@ def status_dict(msg):
     return {
         'stamp': seconds(msg.stamp), 'name': msg.name, 'sequence': msg.sequence,
         'active': list(msg.active), 'last_event': msg.last_event, 'handled': msg.handled,
-        'refusal': msg.refusal, 'running': msg.running,
+        'refusal': msg.refusal, 'ignored': msg.ignored, 'running': msg.running,
         'data': {d.key: d.json for d in msg.data},
         'invokes': [{'state': i.state, 'kind': i.kind, 'target': i.target,
                      'since': seconds(i.since),
@@ -56,7 +56,8 @@ def transition_dict(msg):
         'stamp': seconds(msg.stamp), 'name': msg.name, 'sequence': msg.sequence,
         'event': msg.event, 'data': msg.data, 'source': list(msg.source_configuration),
         'target': list(msg.target_configuration), 'taken': list(msg.taken),
-        'handled': msg.handled, 'refusal': msg.refusal, 'duration': msg.duration,
+        'handled': msg.handled, 'refusal': msg.refusal, 'ignored': msg.ignored,
+        'duration': msg.duration,
     }
 
 
@@ -176,4 +177,4 @@ class ChartTracker:
             return {'error': 'no answer'}
         response = future.result()
         return {'handled': response.handled, 'refusal': response.refusal,
-                'configuration': list(response.configuration)}
+                'ignored': response.ignored, 'configuration': list(response.configuration)}

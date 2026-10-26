@@ -271,7 +271,7 @@ function renderStatus() {
     list.appendChild(li);
   }
   $('last-event').textContent = s.running
-    ? `last event: ${s.last_event || '-'}${s.refusal ? ` (refused: ${s.refusal})` : ''}`
+    ? `last event: ${s.last_event || '-'}${s.refusal ? ` (refused: ${s.refusal})` : ''}${s.ignored ? ` (ignored: ${s.ignored})` : ''}`
     : 'not running';
   const data = $('data');
   data.innerHTML = '';
@@ -312,6 +312,7 @@ function logItem(record) {
   li.dataset.sequence = record.sequence;
   if (record.refusal) li.classList.add('refused');
   else if (!record.handled) li.classList.add('unhandled');
+  else if (record.ignored) li.classList.add('ignored');
   const t = document.createElement('span');
   t.className = 't';
   t.textContent = fmtTime(record.stamp);
@@ -319,6 +320,7 @@ function logItem(record) {
   let text = record.event;
   if (record.refusal) text += ` refused: ${record.refusal}`;
   else if (!record.handled) text += ' (not handled)';
+  else if (record.ignored) text += ` ignored: ${record.ignored}`;
   else text += ` → ${(record.taken || []).map((x) => x.split(' -> ')[1] || '(stays)').join(', ')}`;
   li.appendChild(document.createTextNode(text));
   li.title = record.data ? `data: ${record.data}` : '';
@@ -507,7 +509,8 @@ function setupSend() {
     });
     const a = await r.json();
     $('send-answer').textContent = a.error ? a.error
-      : (a.handled ? 'handled' : (a.refusal ? `refused: ${a.refusal}` : 'not handled'));
+      : (a.refusal ? `refused: ${a.refusal}`
+        : (a.ignored ? `ignored: ${a.ignored}` : (a.handled ? 'handled' : 'not handled')));
   });
 }
 

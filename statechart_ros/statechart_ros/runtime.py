@@ -36,7 +36,7 @@ import time
 import traceback
 
 from statechart_ros.kinds import get_kind, Invocation, Outcome
-from statechart_ros.loader import PREFIX, REFUSAL_VAR, STOP_EVENT
+from statechart_ros.loader import IGNORE_VAR, PREFIX, REFUSAL_VAR, STOP_EVENT
 
 # Keyword names the engine passes to callbacks itself; event data must not use them.
 RESERVED_KEYS = frozenset({'event', 'machine', 'model', 'state', 'source', 'target',
@@ -120,6 +120,7 @@ class ChartModel:
         self.__dict__['_spec'] = spec
         self.__dict__['_user'] = user
         self.__dict__[REFUSAL_VAR] = ''
+        self.__dict__[IGNORE_VAR] = ''
 
     def __getattr__(self, name):
         if name.startswith('_'):
@@ -181,6 +182,7 @@ class EventResult:
     refusal: str
     configuration: list
     taken: list = field(default_factory=list)
+    ignored: str = ''          # the reason, when a ros:ignore matched
 
 
 @dataclass
@@ -198,6 +200,7 @@ class Record:
     refusal: str
     duration: float
     events: list = field(default_factory=list)   # events of the transitions taken
+    ignored: str = ''
 
 
 class Host:
@@ -452,17 +455,20 @@ class ChartRunner:
             return EventResult(event, False, 'event data may not use the names '
                                + ', '.join(sorted(bad)), self.configuration())
         self.model.__dict__[REFUSAL_VAR] = ''
+        self.model.__dict__[IGNORE_VAR] = ''
         self._taken = []
         source = self.configuration()
         start = time.monotonic()
         self.sm.send(event, **data)
         refusal = self.model.__dict__.get(REFUSAL_VAR, '')
+        ignored = self.model.__dict__.get(IGNORE_VAR, '')
         handled = any(not t['refusal'] for t in self._taken if t['event'] == event)
         if not handled and not refusal and event != STOP_EVENT:
             self.log.warning(f'event "{event}" was not handled in configuration '
                              f'{{{", ".join(source)}}}')
-        record = self._record(event, data, source, start, handled, refusal)
-        self._last = EventResult(event, handled, refusal, record.target, record.taken)
+        record = self._record(event, data, source, start, handled, refusal, ignored)
+        self._last = EventResult(event, handled, refusal, record.target, record.taken,
+                                 ignored=ignored)
         self._notify(record)
         if event != STOP_EVENT and not event.startswith(('done.', 'error.')):
             for kind in self.kinds.values():
@@ -471,13 +477,13 @@ class ChartRunner:
                     forward(event, data)
         return self._last
 
-    def _record(self, event, data, source, start, handled, refusal):
+    def _record(self, event, data, source, start, handled, refusal, ignored=''):
         self.sequence += 1
         return Record(stamp=self.host.now(), sequence=self.sequence, event=event, data=data,
                       source=source, target=self.configuration(),
                       taken=[t['label'] for t in self._taken], handled=handled,
                       refusal=refusal, duration=time.monotonic() - start,
-                      events=[t['event'] for t in self._taken])
+                      events=[t['event'] for t in self._taken], ignored=ignored)
 
     def _notify(self, record):
         for observer in list(self.observers):
@@ -510,7 +516,8 @@ class ChartRunner:
             active += [f'{sid}/{s}' for s in nested['active']]
             invokes += [dict(i, state=f'{sid}/{i["state"]}') for i in nested['invokes']]
         return {'active': active, 'last_event': last.event,
-                'handled': last.handled, 'refusal': last.refusal, 'invokes': invokes,
+                'handled': last.handled, 'refusal': last.refusal,
+                'ignored': getattr(last, 'ignored', ''), 'invokes': invokes,
                 'sequence': self.sequence, 'running': self.running}
 
     # --- the engine's listener (called on the worker) -------------------------------

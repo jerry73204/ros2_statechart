@@ -7,5 +7,7 @@ string data
 bool handled
 # The reason, when a ros:refuse matched.
 string refusal
+# The reason, when a ros:ignore matched (handled stays true).
+string ignored
 # The active configuration after the event.
 string[] configuration

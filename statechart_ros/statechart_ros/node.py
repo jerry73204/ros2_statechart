@@ -348,6 +348,7 @@ class StatechartNode(LifecycleNode):
             return response
         response.handled = result.handled
         response.refusal = result.refusal
+        response.ignored = result.ignored
         response.configuration = list(result.configuration)
         return response
 
@@ -373,9 +374,11 @@ class StatechartNode(LifecycleNode):
             if reply:
                 built = self.runner.run_in_worker(self._call_user, reply, {
                     'response': response, 'request': request, 'handled': result.handled,
-                    'refusal': result.refusal, 'configuration': result.configuration})
+                    'refusal': result.refusal, 'ignored': result.ignored,
+                    'configuration': result.configuration})
                 return built if built is not None else response
             for key, value in (('handled', result.handled), ('refusal', result.refusal),
+                               ('ignored', result.ignored),
                                ('configuration', list(result.configuration))):
                 if hasattr(response, key):
                     setattr(response, key, value)

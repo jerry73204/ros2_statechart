@@ -90,18 +90,21 @@ INVOKE = '<ros:invoke kind="test/scripted"/>'
 def test_events_answers_handled_refused_ignored_unhandled():
     runner, _ = runner_of(
         '<state id="a"><transition event="go" target="b"/>'
-        '<ros:refuse event="halt" reason="nothing to halt"/><ros:ignore event="noise"/></state>'
+        '<ros:refuse event="halt" reason="nothing to halt"/><ros:ignore event="noise"/>'
+        '<ros:ignore event="hum" reason="background"/></state>'
         '<state id="b"><transition event="back" target="a"/></state>')
     try:
         assert runner.configuration() == ['a']
         result = runner.send('halt')
         assert (result.handled, result.refusal) == (False, 'nothing to halt')
         result = runner.send('noise')
-        assert (result.handled, result.refusal) == (True, '')
+        assert (result.handled, result.refusal, result.ignored) == (True, '', 'ignored')
+        result = runner.send('hum')
+        assert (result.handled, result.refusal, result.ignored) == (True, '', 'background')
         result = runner.send('nonsense')
-        assert (result.handled, result.refusal) == (False, '')
+        assert (result.handled, result.refusal, result.ignored) == (False, '', '')
         result = runner.send('go')
-        assert result.handled and result.configuration == ['b']
+        assert result.handled and result.configuration == ['b'] and result.ignored == ''
         assert result.taken == ['a -> b']
     finally:
         runner.shutdown()

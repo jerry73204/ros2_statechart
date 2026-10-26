@@ -114,7 +114,7 @@ def test_events_stream_and_send(setup):
                                 for k, m in events))
     status, answer = post(setup, '/api/send', {'node': '/demo', 'event': 'pause'})
     status, answer = post(setup, '/api/send', {'node': '/demo', 'event': 'pause'})
-    assert answer == {'handled': False, 'refusal': 'already paused',
+    assert answer == {'handled': False, 'refusal': 'already paused', 'ignored': '',
                       'configuration': answer['configuration']}
     conn.close()
 

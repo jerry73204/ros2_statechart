@@ -4,6 +4,7 @@ Changelog for package statechart_ros
 
 Forthcoming
 -----------
+* An event a ``ros:ignore`` matched reports its reason as ``ignored`` (``EventResult``, the transition log, the status, ``SendEvent`` replies and reply builders); ``handled`` stays true.
 * Diagrams of charts whose transitions cross compound states' borders: the Mermaid output is a flowchart with one subgraph per compound or parallel state (a ``stateDiagram-v2`` moved states out of their parents, and notes inside nested states stopped Mermaid 10); Graphviz no longer fails with "trouble in init_rank" (an edge is clipped at a cluster only when its other end is outside it, and initial-state edges come after the cluster's states).
 
 0.1.1 (2026-10-26)

@@ -40,6 +40,8 @@ class SendVerb(VerbExtension):
                 return 1
         if answer.refusal:
             print(f'refused: {answer.refusal}')
+        elif answer.ignored:
+            print(f'ignored: {answer.ignored}')
         else:
             print('handled' if answer.handled else 'not handled')
         print('configuration: ' + ', '.join(answer.configuration))

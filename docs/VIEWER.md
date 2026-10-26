@@ -30,7 +30,8 @@ The page shows, for the chart chosen at the top (or named in the URL,
   summary (distance remaining, docking phase...);
 - **data**: the datamodel values the chart node publishes
   (`datamodel_publish`);
-- **transitions**: every event with what it did, refusals in red; click an
+- **transitions**: every event with what it did, refusals in red, ignored
+  events in grey with their reason; click an
   entry to see the configuration after it ("time travel"), and *Back to
   live* to return;
 - **send an event**: when the chart node runs with `debug_events:=true`, a
@@ -66,6 +67,6 @@ the bag ends.
 |---|---|
 | `list` | the running charts (nodes with `~/structure`) |
 | `show /patrol` | the states as a tree, active ones marked `*`, running invokes with elapsed time and feedback, the last event, published data |
-| `echo /patrol [-n N] [--timeout S]` | transitions as they happen: time, event, data, what was taken or why it was refused |
-| `send /patrol start '{"key": 1}'` | a debug event (needs `debug_events:=true`); prints handled, refused with the reason, or not handled, and the configuration; exit code 0, 1 (error) or 2 (not handled) |
+| `echo /patrol [-n N] [--timeout S]` | transitions as they happen: time, event, data, what was taken, or why it was refused or ignored |
+| `send /patrol start '{"key": 1}'` | a debug event (needs `debug_events:=true`); prints handled, refused or ignored with the reason, or not handled, and the configuration; exit code 0, 1 (error) or 2 (not handled) |
 | `validate`, `diagram`, `export --plain` | the offline verbs (FORMAT.md section 6, DESIGN.md section 7) |

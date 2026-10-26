@@ -51,7 +51,7 @@ from statechart_ros_testing.chart_test import chart_under_test, ChartTestError
 import yaml
 
 ACTIONS = ('send', 'complete', 'advance')
-CHECKS = ('expect', 'expect_not', 'configuration', 'handled', 'refused', 'datamodel',
+CHECKS = ('expect', 'expect_not', 'configuration', 'handled', 'refused', 'ignored', 'datamodel',
           'outputs')
 ARGUMENTS = ('data', 'status', 'note')
 
@@ -115,6 +115,9 @@ def _run_step(test, step):
     if 'refused' in step:
         assert result is not None, 'refused needs a send'
         assert result.refusal == step['refused'], f'refusal is {result.refusal!r}'
+    if 'ignored' in step:
+        assert result is not None, 'ignored needs a send'
+        assert result.ignored == step['ignored'], f'ignored is {result.ignored!r}'
     for key, value in step.get('datamodel', {}).items():
         got = getattr(test.data, key)
         assert got == value, f'datamodel {key} is {got!r}, expected {value!r}'

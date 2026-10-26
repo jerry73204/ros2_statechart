@@ -119,6 +119,7 @@ def status_msg(name, snapshot, data, now):
     msg.last_event = snapshot['last_event']
     msg.handled = snapshot['handled']
     msg.refusal = snapshot['refusal']
+    msg.ignored = snapshot.get('ignored', '')
     msg.running = snapshot['running']
     for key, value in sorted(data.items()):
         item = DataValue()
@@ -149,5 +150,6 @@ def transition_msg(name, record):
     msg.taken = list(record.taken)
     msg.handled = record.handled
     msg.refusal = record.refusal
+    msg.ignored = record.ignored
     msg.duration = float(record.duration)
     return msg

@@ -50,6 +50,7 @@ ul.compact, ol { margin: 0; padding-left: 18px; }
 #log li { padding: 3px 4px; border-radius: 4px; cursor: pointer; }
 #log li:hover, #log li.selected { background: var(--cluster); }
 #log li.refused { color: var(--refused); }
+#log li.ignored { color: var(--muted); }
 #log li.unhandled { color: var(--muted); }
 #log .t { color: var(--muted); font-variant-numeric: tabular-nums; margin-right: 6px; }
 .invoke .feedback { color: var(--muted); font-size: 12px; }

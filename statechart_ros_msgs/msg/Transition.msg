@@ -12,5 +12,7 @@ string[] target_configuration
 string[] taken
 bool handled
 string refusal
+# The reason, when a ros:ignore matched (handled stays true; "ignored" if none given).
+string ignored
 # Processing time of the macrostep, in seconds.
 float64 duration

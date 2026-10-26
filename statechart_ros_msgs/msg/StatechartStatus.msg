@@ -11,6 +11,8 @@ string last_event
 bool handled
 # The reason, when the last event was refused.
 string refusal
+# The reason, when a ros:ignore matched the last event (handled stays true).
+string ignored
 # Selected datamodel values (parameter datamodel_publish).
 DataValue[] data
 InvokeStatus[] invokes

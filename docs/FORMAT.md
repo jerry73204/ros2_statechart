@@ -242,7 +242,9 @@ different reasons:
 
 `ros:ignore` marks an event as deliberately without effect in that state, so
 the validator does not report it; unlike a refusal, the reply says
-`handled`. The validator treats refused and ignored events as handled; any
+`handled`, with its reason in `ignored` (`"ignored"` when it gives none): the
+`SendEvent` reply, the `~/transitions` and `~/status` messages, `ros2
+statechart send` and `echo`, and the viewer's log show it. The validator treats refused and ignored events as handled; any
 other unhandled input event is an error, because a command that vanishes
 without an answer is a defect on a robot. Transition selection is standard
 SCXML (innermost state first), so a refusal in a child overrides a
