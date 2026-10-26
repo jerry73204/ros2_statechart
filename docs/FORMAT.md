@@ -32,9 +32,9 @@ SCXML.
    namespace, and launch-time remapping applies. A chart never hard-codes a
    robot's namespace.
 6. **Code by name only.** Guards, builders and handlers are names of methods
-   on the model object (`ros:model`). Expressions in the document stay in the
-   restricted datamodel: comparisons of datamodel values, `In(...)`, no
-   function calls.
+   on the model object (`ros:model`). Expressions in the document are chart
+   expressions (section 8): a small, validated subset of Python with
+   comparisons of datamodel values, `In(...)`, no function calls.
 7. **Expansion.** The loader expands the extension into plain SCXML plus
    listener callbacks before the engine sees the document. `ros2 statechart
    export --plain` writes the expanded document, which any SCXML tool can
@@ -295,7 +295,57 @@ tool knows, each chart also ran with `datamodel` set to `null` or
 | scxmlgui (git `1e09202`, `fsm-editor.jar` 2016) | all three, `python` included | kept as each state's other content | none | yes, and the result validates; but `datamodel` is dropped, and `ros:` elements move after the transitions of their state |
 | AS2FM (git `3252344`, 0.0.1, not on PyPI) | none of the three | under `<scxml>`: dropped; inside states: rejected (`unexpected tag on_entry`: it strips namespaces) | also, independent of `ros:`: no `<history>`, no `<parallel>`, requires `name` on `<scxml>` and `type` on `<data>` | no |
 
-For a tool that rejects the extension or the datamodel, use
-`ros2 statechart export --plain`, which writes the expanded document without
-`ros:` elements (the `datamodel` attribute still has to be changed for Qt and
-Commons SCXML, whose guards are then evaluated in their own datamodels).
+Other tools get `ros2 statechart export --plain`, the only export: the
+`ros:` elements removed, the sugar expanded into standard transitions, and
+`datamodel="python"` kept, because the chart's expressions are Python
+(section 8). Tools without a Python datamodel (Qt SCXML, Commons SCXML 0.9)
+will still refuse the exported document; there is deliberately no export
+that rewrites the datamodel, since the chart's conditions would then mean
+something else. To look at a chart, use `ros2 statechart diagram` or the web
+viewer.
+
+## 8. Expressions (chart expressions, ns/1)
+
+Conditions and values in a chart are written in one small subset of Python,
+the same on every supported Python (3.10 and later), and checked by the
+validator (rule 10) before a chart runs.
+
+**Where.** `cond` of `<transition>` (and of `<if>`/`<elseif>`), `expr` of
+`<data>` and `<assign>`. The `location` of `<assign>` is a datamodel name
+only (no attribute or item targets). `ros:` attributes are not expressions:
+they name model methods, states or events.
+
+**Allowed.**
+
+| Form | Examples |
+|---|---|
+| names: datamodel values, model guard names, event data (`msg`, `request`, `goal`, and the names a `data` builder adds), with attribute chains, read only | `retries`, `ready`, `msg.data`, `goal.station` |
+| literals: `int`, `float`, `str`, `True`, `False`, `None` | `3`, `0.5`, `'home'` |
+| comparisons `==` `!=` `<` `<=` `>` `>=`, one per comparison | `retries < max_retries` |
+| `and`, `or`, `not`, parentheses | `In('OK') and not paused` |
+| arithmetic `+` `-` `*` `/` and unary `-` on numbers | `laps + 1` |
+| `In('<state id>')` with a literal id of an existing state | `In('DOCKED')` |
+
+**Refused.** Any other call; indexing and slicing; comprehensions, `lambda`,
+f-strings, `:=`, conditional expressions; `**`, `//`, `%` and bitwise
+operators; chained comparisons, `is`, `in`; and the JavaScript tokens the
+engine would translate (`&&`, `||`, `===`, `!==`, `true`, `false`, `null`,
+ENGINE.md E20), so that a chart stays Python.
+
+**No truthiness.** A condition must be boolean: a comparison, a datamodel
+value whose initial literal is `True` or `False`, `In(...)`, a guard name, or
+`and`, `or`, `not` of those. A guard method must return a `bool`; another
+return value raises `error.execution` at run time.
+
+**Reserved names.** Names starting with `_`, names starting with `sc_ros_`,
+and Python keywords cannot be datamodel names or guard names.
+
+**Why Python.** Models, guards and builders are Python; ROS launch files
+evaluate Python (`$(eval ...)`); one language means one set of rules for
+types and comparison. ECMAScript was rejected for its implicit coercions
+(`'1' == 1`, truthiness of `[]`). A second language such as CEL could be
+added later as generated callbacks without changing this one.
+
+**Versioning.** The subset is part of the format `ns/1`. Additions are
+backwards compatible and raise the format's minor version; a removal would
+be a new namespace.

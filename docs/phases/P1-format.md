@@ -41,3 +41,24 @@ starting ROS.
 ## Leaves out
 
 The node, ROS communication, introspection topics.
+
+## Amendment: expression subset
+
+Decided after P3: chart expressions are a defined Python subset
+([FORMAT.md](../FORMAT.md) section 8). Implemented between P3 and P4.
+
+### Delivers
+
+- A validator rule (10): every `cond`, `<data expr>` and `<assign expr>` is
+  parsed with `ast` (`mode='eval'`) and walked against the allowlist;
+  conditions are type-checked as boolean; `<assign location>` is a datamodel
+  name; `In()` names an existing state. Findings carry file, line and rule.
+- Run time: a guard method that returns something other than a `bool`
+  raises `error.execution`.
+- CI on Humble, Jazzy and Rolling ([P0](P0-foundations.md)).
+
+### Checks
+
+- One passing and one failing fixture per allowed and per refused construct.
+- The example charts pass.
+- CI green on the three distributions; the vendor package installs on all.

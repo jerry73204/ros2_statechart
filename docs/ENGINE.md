@@ -60,6 +60,10 @@ python-statemachine implements statecharts with SCXML semantics:
 | E16 | A chart loaded from SCXML with unreachable or trap states | loads: the SCXML reader turns the engine's class-level checks off |
 | E17 | A targetless `<transition type="internal">` | refused at load (`InvalidDefinition: Not a valid internal transition`); a targetless transition without `type` handles the event in place, running its content |
 | E18 | `<data id="state">` | overwritten: the engine keeps the configuration in the model attribute `state` |
+| E19 | `datamodel="ecmascript"`, `"null"` or any other value | ignored: expressions are evaluated by the restricted Python evaluator whatever the attribute says |
+| E20 | `&&`, `\|\|`, `===`, `!==`, `true`, `false`, `null` in a condition | normalised to `and`, `or`, `==`, `!=`, `True`, `False`, `None` before the restricted evaluator; `!x` is refused at load (a syntax error) |
+| E21 | Member access on a dict datamodel value, `p.k` | fails at run time (`error.execution`); `p['k']` works |
+| E22 | `x in [...]`, `x is y` in a condition | refused at load, with a `KeyError` from the restricted evaluator |
 
 ## Answered in P0
 
@@ -113,6 +117,11 @@ worker thread, which needs no event loop next to rclpy's executor.
   checks itself on the loaded class.
 - **Refusals (E17, E18).** `ros:refuse` expands into a targetless transition
   without `type`. Data ids `state` and names starting `sc_ros_` are reserved.
+- **Expressions (E19 to E22).** The engine's restricted evaluator accepts
+  more than a chart may use and accepts it with JavaScript spellings. The
+  validator allows only chart expressions (FORMAT.md section 8) and refuses
+  the JavaScript tokens, `!`, member access on values that are not objects
+  and the operators the engine handles badly.
 - **Unhandled events (E9).** Silently ignoring a command is a defect for a
   robot. The validator requires every declared input event to be handled or
   explicitly refused in every reachable configuration, and the node reports

@@ -15,7 +15,9 @@ by tests, so later phases build on verified facts.
   `io` extra into the package's install space; `package.xml` declares its
   own dependencies (PyYAML, jsonschema) as rosdep keys.
 - GitHub Actions: build and test on ROS 2 Jazzy (`ros-tooling/setup-ros`,
-  `ros-tooling/action-ros-ci`, pinned to release tags), lint.
+  `ros-tooling/action-ros-ci`, pinned to release tags), lint. Since the
+  expression amendment (after P3) the per-push job is a matrix of Humble,
+  Jazzy and Rolling.
 - **Engine probes as tests** (`statechart_ros/test/engine/`): every row of
   [ENGINE.md](../ENGINE.md) (E1 to E12) as a pytest case, plus the open
   questions answered and turned into tests:

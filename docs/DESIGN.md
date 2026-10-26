@@ -222,8 +222,11 @@ and in invoke kinds, which are Python packages installed like any other.
 
 ## 12. Packaging and releases
 
-- ROS 2 Jazzy first (Python 3.12), then Kilted and Rolling; Humble if the
-  engine's Python 3.10 support holds.
+- ROS 2 Humble (Python 3.10), Jazzy (Python 3.12) and Rolling are
+  supported: CI builds and tests every package on all three on every push
+  (Nav2 in simulation runs nightly on Jazzy). Packages that need a newer
+  ROS interface than Humble has (the Nav2 docking server) say so and skip
+  those tests there.
 - python-statemachine is not in Ubuntu, and the ROS buildfarm does not allow
   pip dependencies for binary packages, so `python_statemachine_vendor`
   ships a pinned release; the version is raised only with the engine probes
@@ -239,6 +242,7 @@ and in invoke kinds, which are Python packages installed like any other.
 | Format | SCXML plus `ros:` elements in the document | one file shows states and what they do; SCXML extension points; standard tools still read it |
 | ROS bindings placement | direct children of `<scxml>` and states | where both the W3C schema and the engine accept them |
 | Code | Python model, by name | declarative documents, restricted datamodel |
+| Expression language | a Python subset, validated (FORMAT.md section 8) | the team writes Python; launch files evaluate Python; ECMAScript rejected for its coercions; CEL possible later as a second language through generated callbacks |
 | Unhandled events | an error unless refused or ignored | a robot must answer every command |
 | Process structure | one chart per node; other nodes invoked | statechart guarantees need one configuration and one queue |
 | Viewer | web page served by a node | works on any machine with a browser |
