@@ -133,11 +133,13 @@ in the event data for guards and handlers (`result`, `error_code`,
 `error_msg`). Each outcome expands into:
 
 ```xml
-<transition event="done.invoke.DOCKING" cond="_ros_outcome_DOCKING_1" target="DOCKED"/>
+<transition event="done.invoke.DOCKING" cond="sc_ros_outcome_DOCKING_1" target="DOCKED"/>
 ```
 
 with a generated model callback that checks the status, so a chart never
-depends on how the engine wraps invoke data. The validator requires every
+depends on how the engine wraps invoke data. Generated names start with
+`sc_ros_` (the engine never resolves names starting with `_`, ENGINE.md
+E15); model methods and data ids must not use that prefix. The validator requires every
 status of the invoke kind to be covered.
 
 ### Outputs: done once
@@ -157,6 +159,22 @@ order, after the standard `<onentry>` and before the standard `<onexit>`
 respectively. Publishers to the same topic in several states share one
 publisher (latched if any of them says `qos="latched"`).
 
+### Timeouts
+
+```xml
+<state id="WAITING_FOR_DOOR">
+  <ros:after delay="30" event="door_timeout"/>
+  <transition event="door_timeout" target="REPORT"/>
+</state>
+```
+
+`ros:after` sends `event` once, `delay` seconds (ROS time, so simulation
+time under `use_sim_time`) after the state is entered, unless the state is
+left first. A state may declare several. It is not an invoke: it has no
+outcome and does not count against rule 3. Standard `<send delay>` is
+refused by the validator, because the engine holds the caller of `send`
+until a delayed event is due ([ENGINE.md](ENGINE.md) E13).
+
 ### Refusals
 
 ```xml
@@ -165,9 +183,10 @@ publisher (latched if any of them says `qos="latched"`).
 </state>
 ```
 
-Expands into a standard internal transition that handles the event without
-changing state and records the reason (an `<assign>` to a datamodel variable
-the loader declares), which the service or action reply returns.
+Expands into a standard targetless transition (without `type`, ENGINE.md
+E17) that handles the event without changing state and records the reason
+(an `<assign>` to the datamodel variable `sc_ros_refusal`, which the loader
+declares), which the service or action reply returns.
 
 ```xml
 <state id="OK">
@@ -210,7 +229,11 @@ Errors stop the node from starting and fail CI:
 6. every input event is handled or refused in every reachable configuration
    of the region that receives it;
 7. no state has two invokes; no `ros:` element in executable content;
-8. `ros:param` names match `<data>` ids.
+8. `ros:param` names match `<data>` ids;
+9. no `<send>` with `delay` or `delayexpr` (use `ros:after`); no `<data>` id
+   `state` (the engine's own attribute, ENGINE.md E18) and no name starting
+   `sc_ros_`; state ids are Python identifiers (the engine derives callback
+   names such as `on_invoke_<state>` from them).
 
 ## 7. Compatibility with other SCXML tools
 

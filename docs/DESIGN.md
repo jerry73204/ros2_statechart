@@ -71,11 +71,20 @@ trees, a docking server's states) remains theirs.
   and action client futures complete while the worker processes an event.
   Blocking ROS calls are never made from the worker; invokes use the
   asynchronous client APIs.
-- **Invokes.** The engine runs each invocation in its own thread (E4). Our
-  handlers send the goal with the async API, wait on the result future or on
-  `ctx.cancelled`, and on cancellation cancel the goal and wait for the
-  server's confirmation (bounded by `cancel_timeout`) before releasing the
-  server for the next goal.
+- **Invokes.** The engine runs each invocation in its own thread
+  (ENGINE.md E4, Q4). The engine would also process an invoke's result on
+  that thread when the worker is idle (E14), so our handlers never hand
+  their outcome to the engine: they send the goal with the async API, wait
+  on the result future or on `ctx.cancelled`, put the outcome on the node's
+  queue and then wait for `ctx.cancelled`. The worker sends
+  `done.invoke.<state>` with the outcome, after checking that the invocation
+  is still the current one of its state. On cancellation a handler requests
+  the cancel and returns at once (the engine joins its thread on the
+  worker); a per-server gate, released when the server confirms or after
+  `cancel_timeout`, makes the next goal to that server wait in its own
+  invoke thread, so a new goal never races the cancel of the old one.
+- **Timeouts.** `ros:after` uses ROS timers, not delayed SCXML sends, which
+  would hold the worker (E13).
 - **Outcomes.** Handlers never raise for an expected failure: they return a
   status, result and error fields, and generated conditions route them
   ([FORMAT.md](FORMAT.md) section 4). An exception in user code becomes
