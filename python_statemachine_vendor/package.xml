@@ -1,0 +1,27 @@
+<?xml version="1.0"?>
+<?xml-model href="http://download.ros.org/schema/package_format3.xsd" schematypens="http://www.w3.org/2001/XMLSchema"?>
+<package format="3">
+  <name>python_statemachine_vendor</name>
+  <version>0.1.0</version>
+  <description>python-statemachine 3.2.2 (MIT), the statechart engine of ros2_statechart, installed as released from its wheel on PyPI.</description>
+  <maintainer email="jerry73204@gmail.com">jerry73204</maintainer>
+  <license>Apache-2.0</license>
+  <license>MIT</license>
+  <url type="website">https://github.com/fgmacedo/python-statemachine</url>
+  <url type="repository">https://github.com/jerry73204/ros2_statechart</url>
+
+  <buildtool_depend>ament_cmake</buildtool_depend>
+  <buildtool_depend>ament_cmake_python</buildtool_depend>
+
+  <!-- The io extra of python-statemachine. SCXML loading needs neither;
+       PyYAML reads YAML charts, jsonschema validates JSON and YAML charts. -->
+  <exec_depend>python3-yaml</exec_depend>
+  <exec_depend>python3-jsonschema</exec_depend>
+
+  <test_depend>ament_lint_auto</test_depend>
+  <test_depend>ament_lint_common</test_depend>
+
+  <export>
+    <build_type>ament_cmake</build_type>
+  </export>
+</package>

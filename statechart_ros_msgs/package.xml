@@ -1,0 +1,20 @@
+<?xml version="1.0"?>
+<?xml-model href="http://download.ros.org/schema/package_format3.xsd" schematypens="http://www.w3.org/2001/XMLSchema"?>
+<package format="3">
+  <name>statechart_ros_msgs</name>
+  <version>0.1.0</version>
+  <description>Messages, services and the action of ros2_statechart: chart structure, status and transitions, debug services, running a chart as an action.</description>
+  <maintainer email="jerry73204@gmail.com">jerry73204</maintainer>
+  <license>Apache-2.0</license>
+  <url type="repository">https://github.com/jerry73204/ros2_statechart</url>
+  <url type="bugtracker">https://github.com/jerry73204/ros2_statechart/issues</url>
+
+  <buildtool_depend>ament_cmake</buildtool_depend>
+
+  <test_depend>ament_lint_auto</test_depend>
+  <test_depend>ament_lint_common</test_depend>
+
+  <export>
+    <build_type>ament_cmake</build_type>
+  </export>
+</package>

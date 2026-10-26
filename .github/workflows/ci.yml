@@ -1,0 +1,36 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  build-and-test:
+    name: Jazzy build, lint and test
+    runs-on: ubuntu-24.04
+    container:
+      image: ubuntu:noble
+    steps:
+      - uses: ros-tooling/setup-ros@0.7.19
+        with:
+          required-ros-distributions: jazzy
+      - uses: ros-tooling/action-ros-ci@0.4.8
+        with:
+          target-ros2-distro: jazzy
+          package-name: >-
+            python_statemachine_vendor
+            statechart_ros_msgs
+            statechart_ros
+            statechart_ros_nav2
+            statechart_ros_cli
+            statechart_ros_viewer
+            statechart_ros_testing
+          colcon-defaults: |
+            {
+              "test": {
+                "event-handlers": ["console_cohesion+"],
+                "return-code-on-test-failure": true
+              }
+            }
