@@ -69,8 +69,8 @@ validator requires the `<data>` element to exist.
 | Element | Attributes | Event sent |
 |---|---|---|
 | `ros:subscribe` | `topic`, `type`, `event`, optional `when` (guard on the message), `data` (builder of event data), `qos` (`default`, `sensor`, `latched`) | `event` with `msg` (and builder data) for each message that passes `when` |
-| `ros:service_server` | `name`, `type`, optional `event` (fixed name, or `{field}` to take it from a request field), `reply` (builder) | the event, then the reply after the macrostep (below) |
-| `ros:action_server` | `name`, `type`, `event`, optional `accept` (guard), `feedback` (builder), `result_on` (event name), `result` (builder), `cancel_event` | `event` with `goal` when accepted; `cancel_event` on a cancel request |
+| `ros:service_server` | `name`, `type`, optional `event` (fixed name, or a template whose `{field}` parts are taken from the request's fields, such as `{command}` or `command.{command}`), `reply` (builder) | the event, then the reply after the macrostep (below) |
+| `ros:action_server` | `name`, `type`, `event`, optional `accept` (guard), `feedback` (builder), `result_on` (event name), `result` (builder), `result_status` (builder), `cancel_event`, `cancel_waits` (bool) | `event` with `goal` when accepted; `cancel_event` on a cancel request |
 | `ros:timer` | `period` (s), `event` | `event` every period |
 
 **Service replies.** A request becomes an event; after the event is
@@ -88,6 +88,15 @@ when a goal is refused (`accept`, or a goal event that is not handled, which
 aborts the goal) and what a cancel means (`cancel_event`; without one,
 cancel requests are rejected). One goal runs at a time; another is rejected
 while it runs.
+
+How the goal ends: by default a goal reaching `result_on` succeeds, and a
+cancel request ends it at once as canceled. `result_status` names a model
+method returning `succeeded`, `aborted` or `canceled` for the goal reaching
+`result_on` (it receives, by argument name, `result`, `configuration` and
+`cancel_requested`, as `result` does). With `cancel_waits="true"` a cancel
+request only sends `cancel_event`: the goal goes on until the chart reaches
+`result_on`, so a chart can finish what a cancel starts (back out, park)
+before the goal ends; `result_status` then says whether it ended canceled.
 
 **Event data.** A subscription's event carries `msg`, a service request's
 `request`, an action goal's `goal`; builders named in `data` add entries.
@@ -168,8 +177,18 @@ status of the invoke kind to be covered.
 
 `ros:on_entry` and `ros:on_exit` take one of `publish` (with `value`, a
 literal, or `message`, a builder), `call` (a service, fire and forget, with
-`request`) or `set_param` (the parameter name, with `value` and optional
-`node`, the node whose parameter is set; default this node). A `value` is
+`request`), `set_param` (the parameter name, with `value` and optional
+`node`, the node whose parameter is set; default this node) or `run` (a
+model method).
+
+`run` calls the model method on the worker inside the macrostep, so what it
+changes on the model is seen by the guards of the transitions that follow
+(an eventless transition out of the state, for example). It receives, by
+argument name, `datamodel`, `state` (the state's id), `event` (the name of
+the event whose transition entered or left the state, `''` for an eventless
+one) and `data` (that event's data). Use it for bookkeeping that belongs to
+entering or leaving a state, never for ROS work (rule 2): its return value
+is ignored, and an exception is logged like a failed output. A `value` is
 read as YAML: a mapping sets the message's fields by name, anything else is
 assigned to the field `data` (as in `std_msgs`). They run in document
 order, after the standard `<onentry>` and before the standard `<onexit>`
@@ -187,7 +206,9 @@ publisher (latched if any of them says `qos="latched"`).
 
 `ros:after` sends `event` once, `delay` seconds (ROS time, so simulation
 time under `use_sim_time`) after the state is entered, unless the state is
-left first. A state may declare several. It is not an invoke: it has no
+left first. `delay` is a number, or the id of a `<data>` value read when the
+state is entered (a `ros:param`, so the timeout is a parameter:
+`<ros:after delay="retry_delay" event="retry"/>`). A state may declare several. It is not an invoke: it has no
 outcome and does not count against rule 3. Standard `<send delay>` is
 refused by the validator, because the engine holds the caller of `send`
 until a delayed event is due ([ENGINE.md](ENGINE.md) E13).
@@ -203,7 +224,15 @@ until a delayed event is due ([ENGINE.md](ENGINE.md) E13).
 Expands into a standard targetless transition (without `type`, ENGINE.md
 E17) that handles the event without changing state and records the reason
 (an `<assign>` to the datamodel variable `sc_ros_refusal`, which the loader
-declares), which the service or action reply returns.
+declares), which the service or action reply returns. `event` may name
+several events, separated by spaces. An optional `cond` (a chart expression,
+section 8) makes the refusal apply only when it holds, so one state can give
+different reasons:
+
+```xml
+<ros:refuse event="start" cond="In('PAUSED')" reason="paused: resume first"/>
+<ros:refuse event="start" reason="stopped: release the stop, then resume"/>
+```
 
 ```xml
 <state id="OK">
@@ -297,7 +326,7 @@ Errors stop the node from starting and fail CI:
 7. no state has two invokes; no `ros:` element in executable content;
    no inputs in a child chart and no chart that includes itself (directly
    or through its children); every child chart passes these rules too;
-8. `ros:param` names match `<data>` ids;
+8. `ros:param` names, and `ros:after` delays given by name, match `<data>` ids;
 9. no `<send>` with `delay` or `delayexpr` (use `ros:after`); no `<data>` id
    `state` (the engine's own attribute, ENGINE.md E18), `event`, `source`,
    `target`, `transition`, `event_data`, `machine`, `model` (names the engine

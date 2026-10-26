@@ -538,7 +538,7 @@ class ChartRunner:
         def on_exit_state(self, state=None, **kwargs):
             track()
             if state is not None and not state.id.startswith(PREFIX):
-                runner._exited(state.id)
+                runner._exited(state.id, kwargs)
 
         methods['after_transition'] = after_transition
         methods['on_exit_state'] = on_exit_state
@@ -546,7 +546,7 @@ class ChartRunner:
         def entry(sid):
             def on_enter(self, **kwargs):
                 track()
-                runner._entered(sid)
+                runner._entered(sid, kwargs)
             return on_enter
 
         for sid, info in self.spec.states.items():
@@ -561,12 +561,13 @@ class ChartRunner:
 
         for sid in self.spec.invokes:
             methods[f'on_invoke_{sid}'] = invoker(sid)
-        self._refusal_keys = {(r.state, r.event) for rs in self.spec.refusals.values()
-                              for r in rs if not r.ignore}
+        # A refusal may name several events (event="pause resume"): one key each
+        self._refusal_keys = {(r.state, event) for rs in self.spec.refusals.values()
+                              for r in rs if not r.ignore for event in r.event.split()}
         self._last_final = None
         return type('StatechartListener', (), methods)()
 
-    def _entered(self, sid):
+    def _entered(self, sid, kwargs=None):
         self._next_token += 1
         token = self._next_token
         self._entry_tokens[sid] = token
@@ -575,12 +576,12 @@ class ChartRunner:
             self._last_final = sid
         for out in self.spec.outputs.get(sid, []):
             if out.when == 'entry':
-                self._output(out)
+                self._output(out, kwargs)
         handles = []
         for after in self.spec.afters.get(sid, []):
             def fire(after=after, token=token):
                 self.queue.put(('after', (sid, token, after.event), None))
-            handles.append(self.host.schedule(after.delay, fire))
+            handles.append(self.host.schedule(self._delay(after), fire))
         if handles:
             self._afters[sid] = handles
         if sid in self.spec.invokes:
@@ -592,21 +593,47 @@ class ChartRunner:
                                             'target': summary.get('target', ''),
                                             'since': self.host.now(), 'feedback': {}}
 
-    def _exited(self, sid):
+    def _exited(self, sid, kwargs=None):
         self._entry_tokens.pop(sid, None)
         for handle in self._afters.pop(sid, []):
             handle.cancel()
         for out in self.spec.outputs.get(sid, []):
             if out.when == 'exit':
-                self._output(out)
+                self._output(out, kwargs)
         with self._lock:
             self._invoke_status.pop(sid, None)
 
-    def _output(self, out):
+    def _delay(self, after):
+        """Seconds of a ros:after: its number, or the datamodel value it names."""
+        if isinstance(after.delay, (int, float)):
+            return float(after.delay)
+        return float(getattr(self.model, after.delay))
+
+    def _output(self, out, kwargs=None):
         try:
-            self.host.output(out, self.model, self)
+            if out.action == 'run':
+                self._run_model(out, kwargs or {})
+            else:
+                self.host.output(out, self.model, self)
         except Exception as exc:  # noqa: B902 - an output failure is logged, not fatal
             self.log.error(f'output of state {out.state} (line {out.line}) failed: {exc!r}')
+
+    def _run_model(self, out, kwargs):
+        """
+        Run a ros:on_entry / ros:on_exit ``run`` output: a model method, on the worker.
+
+        It runs inside the macrostep, so what it changes on the model is seen by the
+        guards of the transitions that follow. It receives, by argument name,
+        ``datamodel``, ``state`` (the state's id), ``event`` (the name of the event
+        that caused the transition, '' for an eventless one) and ``data`` (that
+        event's data).
+        """
+        event = kwargs.get('event')
+        name = '' if event is None else str(getattr(event, 'id', None) or event)
+        data = {k: v for k, v in kwargs.items() if k not in _ENGINE_KWARGS}
+        fn = getattr(self.user_model, out.attrs['run'])
+        call_with(fn, {'datamodel': self.model, 'state': out.state, 'event': name,
+                       'data': data})
 
     def _feedback(self, sid, token, summary):
         with self._lock:

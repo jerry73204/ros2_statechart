@@ -33,8 +33,8 @@ import re
 from lxml import etree
 from statechart_ros import kinds as kinds_mod
 from statechart_ros.kinds import (
-    Attr, BUILDER, DATA, ENUM, EVENT, FLOAT, GUARD, MSG_TYPE, NAME, QOS_CHOICES, SRV_TYPE,
-    STRING)
+    Attr, BOOL, BUILDER, DATA, ENUM, EVENT, FLOAT, GUARD, HANDLER, MSG_TYPE, NAME,
+    QOS_CHOICES, SECONDS, SRV_TYPE, STRING)
 
 ROS_NS = 'https://github.com/jerry73204/ros2_statechart/ns/1'
 SCXML_NS = 'http://www.w3.org/2005/07/scxml'
@@ -60,7 +60,8 @@ ELEMENTS = {
         'name': Attr(NAME, required=True), 'type': Attr(kinds_mod.ACTION_TYPE, required=True),
         'event': Attr(EVENT, required=True), 'accept': Attr(GUARD),
         'feedback': Attr(BUILDER), 'result_on': Attr(STRING), 'result': Attr(BUILDER),
-        'cancel_event': Attr(EVENT)}),
+        'result_status': Attr(BUILDER), 'cancel_event': Attr(EVENT),
+        'cancel_waits': Attr(BOOL, default=False)}),
     'timer': (TOP, {'period': Attr(FLOAT, required=True), 'event': Attr(EVENT, required=True)}),
     'outcome': (IN_STATE, {
         'status': Attr(STRING, required=True), 'target': Attr(STRING, required=True),
@@ -68,9 +69,9 @@ ELEMENTS = {
     'on_entry': (IN_STATE, None),
     'on_exit': (IN_STATE, None),
     'refuse': (IN_STATE, {'event': Attr(STRING, required=True),
-                          'reason': Attr(STRING, required=True)}),
+                          'reason': Attr(STRING, required=True), 'cond': Attr(STRING)}),
     'ignore': (IN_STATE, {'event': Attr(STRING, required=True), 'reason': Attr(STRING)}),
-    'after': (IN_STATE, {'delay': Attr(FLOAT, required=True),
+    'after': (IN_STATE, {'delay': Attr(SECONDS, required=True),
                          'event': Attr(EVENT, required=True)}),
 }
 OUTPUT_ATTRS = {
@@ -81,6 +82,7 @@ OUTPUT_ATTRS = {
              'request': Attr(BUILDER)},
     'set_param': {'set_param': Attr(STRING, required=True), 'node': Attr(STRING),
                   'value': Attr(STRING, required=True)},
+    'run': {'run': Attr(HANDLER, required=True)},
 }
 CHILD_PATH = 'sc_ros_path'  # the resolved file of a ros:chart, added by the loader
 _REF = 'sc_ros_ref'  # marks a collected ros:outcome with its generated name
@@ -149,7 +151,7 @@ class OutcomeSpec:
 class OutputSpec:
     state: str
     when: str     # 'entry' or 'exit'
-    action: str   # 'publish', 'call' or 'set_param'
+    action: str   # 'publish', 'call', 'set_param' or 'run'
     attrs: dict
     line: int
 
@@ -157,9 +159,12 @@ class OutputSpec:
 @dataclass
 class AfterSpec:
     state: str
-    delay: float
+    delay: object  # seconds (float), or the name of a datamodel value (str)
     event: str
     line: int
+
+    def label(self):
+        return f'{self.delay:g} s' if isinstance(self.delay, float) else f'{self.delay} s'
 
 
 @dataclass
@@ -169,6 +174,7 @@ class RefusalSpec:
     reason: str
     ignore: bool
     line: int
+    cond: str = None
 
 
 @dataclass
@@ -299,7 +305,7 @@ class ChartSpec:
             if outs:
                 entry['outputs'] = [_output_label(o) for o in outs]
             if self.afters.get(info.id):
-                entry['after'] = [f'{a.event} after {a.delay:g} s' for a in self.afters[info.id]]
+                entry['after'] = [f'{a.event} after {a.label()}' for a in self.afters[info.id]]
             if self.refusals.get(info.id):
                 entry['refuses'] = [{'event': r.event, 'reason': r.reason, 'ignore': r.ignore}
                                     for r in self.refusals[info.id]]
@@ -372,6 +378,8 @@ def _output_label(out):
         return f'{when}: publish {target} {value}'.strip()
     if out.action == 'call':
         return f'{when}: call {target}'
+    if out.action == 'run':
+        return f'{when}: run {target}'
     return f'{when}: set_param {target}={out.attrs.get("value", "")}'
 
 
@@ -636,7 +644,7 @@ def _collect_ros(spec, el, parent, parent_state):
         actions = [a for a in OUTPUT_ATTRS if el.get(a) is not None]
         if len(actions) != 1:
             spec.finding(el.sourceline, 1, f'ros:{tag} takes exactly one of publish, call, '
-                                           'set_param')
+                                           'set_param, run')
             return
         action = actions[0]
         _check_attrs(spec, el, OUTPUT_ATTRS[action], f'ros:{tag} {action}')
@@ -666,12 +674,15 @@ def _collect_ros(spec, el, parent, parent_state):
     elif tag in ('refuse', 'ignore'):
         spec.refusals.setdefault(parent_state, []).append(RefusalSpec(
             parent_state, el.get('event'), el.get('reason') or '', tag == 'ignore',
-            el.sourceline))
+            el.sourceline, el.get('cond')))
+        if el.get('cond'):
+            spec.expressions.append((el.sourceline, 'cond', el.get('cond'), parent_state))
     elif tag == 'after':
         try:
             delay = float(el.get('delay'))
         except (TypeError, ValueError):
-            delay = 0.0
+            # the name of a datamodel value, read when the state is entered
+            delay = el.get('delay') or 0.0
         spec.afters.setdefault(parent_state, []).append(
             AfterSpec(parent_state, delay, el.get('event'), el.sourceline))
 
@@ -717,12 +728,15 @@ def _expand(spec, root, params):
         elif tag in ('refuse', 'ignore') and state is not None and el.get('event'):
             replacement = etree.Element(_q('transition'), nsmap={None: SCXML_NS})
             replacement.set('event', el.get('event'))
+            if el.get('cond'):
+                replacement.set('cond', el.get('cond'))
             if tag == 'refuse':
                 assign = etree.SubElement(replacement, _q('assign'))
                 assign.set('location', REFUSAL_VAR)
                 assign.set('expr', repr(el.get('reason') or ''))
             spec.transitions.append(TransitionInfo(
-                source=state, events=tuple(el.get('event').split()), cond=None, targets=(),
+                source=state, events=tuple(el.get('event').split()), cond=el.get('cond'),
+                targets=(),
                 type='', line=el.sourceline, origin=tag, label=el.get('reason') or ''))
         if replacement is not None:
             replacement.tail = el.tail
@@ -744,7 +758,10 @@ def _expand(spec, root, params):
         for i, after in enumerate(afters):
             send = etree.SubElement(onentry, _q('send'))
             send.set('event', after.event)
-            send.set('delay', f'{after.delay:g}s')
+            if isinstance(after.delay, float):
+                send.set('delay', f'{after.delay:g}s')
+            else:
+                send.set('delayexpr', after.delay)
             send.set('id', f'{PREFIX}after_{state}_{i + 1}')
             cancel = etree.SubElement(onexit, _q('cancel'))
             cancel.set('sendid', f'{PREFIX}after_{state}_{i + 1}')

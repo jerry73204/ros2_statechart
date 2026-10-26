@@ -436,12 +436,17 @@ def check_inputs_handled(spec):
 # Rules 8 and 9 -------------------------------------------------------------------
 
 def check_params(spec):
-    """Rule 8: every ros:param names a <data> item."""
+    """Rule 8: ros:param and a ros:after delay given by name name a <data> item."""
     found = []
     for el in spec.elements:
         if el.tag == 'param' and el.get('name') and el.get('name') not in spec.data:
             found.append(_f(spec, el.line, 8, f'ros:param "{el.get("name")}" has no <data '
                                               f'id="{el.get("name")}"> to initialise'))
+    for afters in spec.afters.values():
+        for after in afters:
+            if isinstance(after.delay, str) and after.delay not in spec.data:
+                found.append(_f(spec, after.line, 8, f'ros:after delay "{after.delay}" is '
+                                                     'neither a number nor a <data> id'))
     return found
 
 

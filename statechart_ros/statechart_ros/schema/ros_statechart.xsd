@@ -49,7 +49,9 @@
       <xsd:attribute name="feedback" type="xsd:string" use="optional"/>
       <xsd:attribute name="result_on" type="xsd:string" use="optional"/>
       <xsd:attribute name="result" type="xsd:string" use="optional"/>
+      <xsd:attribute name="result_status" type="xsd:string" use="optional"/>
       <xsd:attribute name="cancel_event" type="xsd:string" use="optional"/>
+      <xsd:attribute name="cancel_waits" type="xsd:string" use="optional"/>
     </xsd:complexType>
   </xsd:element>
   <xsd:element name="timer">
@@ -120,6 +122,7 @@
       <xsd:attribute name="request" type="xsd:string" use="optional"/>
       <xsd:attribute name="node" type="xsd:string" use="optional"/>
       <xsd:attribute name="qos" type="xsd:string" use="optional"/>
+      <xsd:attribute name="run" type="xsd:string" use="optional"/>
     </xsd:complexType>
   </xsd:element>
   <xsd:element name="on_exit">
@@ -134,6 +137,7 @@
       <xsd:attribute name="request" type="xsd:string" use="optional"/>
       <xsd:attribute name="node" type="xsd:string" use="optional"/>
       <xsd:attribute name="qos" type="xsd:string" use="optional"/>
+      <xsd:attribute name="run" type="xsd:string" use="optional"/>
     </xsd:complexType>
   </xsd:element>
   <xsd:element name="refuse">
@@ -141,6 +145,7 @@
     <xsd:complexType>
       <xsd:attribute name="event" type="xsd:string" use="required"/>
       <xsd:attribute name="reason" type="xsd:string" use="required"/>
+      <xsd:attribute name="cond" type="xsd:string" use="optional"/>
     </xsd:complexType>
   </xsd:element>
   <xsd:element name="ignore">

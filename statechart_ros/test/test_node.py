@@ -134,6 +134,13 @@ class Model:
         msg.data = datamodel.count
         return msg
 
+    def job_result(self, result, cancel_requested):
+        result.sequence = [2 if cancel_requested else 1]
+        return result
+
+    def job_status(self, cancel_requested):
+        return 'canceled' if cancel_requested else 'aborted'
+
 
 @pytest.fixture(scope='module')
 def ros():
@@ -412,6 +419,27 @@ def test_introspection_topics_and_services(harness):
     assert h.config() == {'a'}
 
 
+def test_service_event_template_with_a_prefix(harness):
+    # event="cmd.{event}": the request's field, inside a fixed name
+    h = harness('<ros:service_server name="~/cmd" type="statechart_ros_msgs/srv/SendEvent" '
+                'event="cmd.{event}"/>'
+                '<state id="a"><transition event="cmd.go" target="b"/>'
+                '<ros:refuse event="cmd.back" reason="not going"/></state>'
+                '<state id="b"><transition event="cmd.back" target="a"/>'
+                '<ros:refuse event="cmd.go" reason="already going"/></state>', name='tmpl')
+    command = h.client_node.create_client(SendEvent, '/tmpl/cmd')
+    assert command.wait_for_service(timeout_sec=5.0)
+    for event, handled, refusal, config in (('go', True, '', {'b'}),
+                                            ('go', False, 'already going', {'b'}),
+                                            ('back', True, '', {'a'})):
+        request = SendEvent.Request()
+        request.event = event
+        future = command.call_async(request)
+        assert wait_for(future.done)
+        assert (future.result().handled, future.result().refusal) == (handled, refusal)
+        assert h.config() == config
+
+
 def test_deactivate_cancels_invokes_and_activate_restarts(harness, ros):
     _, servers = ros
     servers.goal_duration = 5.0
@@ -464,6 +492,48 @@ def test_action_server_input(harness, ros):
     assert wait_for(result.done)
     assert result.result().status == GoalStatus.STATUS_CANCELED
     assert h.wait_config({'a'})
+    client.destroy()
+
+
+def test_action_server_status_and_a_cancel_that_waits_for_the_chart(harness, ros):
+    # The chart ends the goal: a cancel request is an event, and the goal ends
+    # only when the chart reaches result_on, with the status the model chooses.
+    h = harness('<ros:model class="test_node:Model"/>'
+                '<ros:action_server name="~/run" type="example_interfaces/action/Fibonacci" '
+                'event="job" result_on="finish" result="job_result" result_status="job_status" '
+                'cancel_event="abort" cancel_waits="true"/>'
+                '<state id="a"><transition event="job" target="busy"/>'
+                '<ros:ignore event="abort finish"/></state>'
+                '<state id="busy"><ros:refuse event="job" reason="busy"/>'
+                '<transition event="abort" target="winding_down"/>'
+                '<transition event="finish" target="a"/></state>'
+                '<state id="winding_down"><ros:refuse event="job abort" reason="busy"/>'
+                '<transition event="finish" target="a"/></state>', name='asrv2')
+    client = ActionClient(h.client_node, Fibonacci, '/asrv2/run')
+    assert client.wait_for_server(timeout_sec=5.0)
+    send = client.send_goal_async(Fibonacci.Goal(order=1))
+    assert wait_for(send.done)
+    handle = send.result()
+    assert h.wait_config({'busy'})
+    result = handle.get_result_async()
+    h.send('finish')
+    assert wait_for(result.done)
+    assert result.result().status == GoalStatus.STATUS_ABORTED     # job_status chose it
+    assert list(result.result().result.sequence) == [1]
+    send = client.send_goal_async(Fibonacci.Goal(order=1))
+    assert wait_for(send.done)
+    handle = send.result()
+    assert h.wait_config({'busy'})
+    cancel = handle.cancel_goal_async()
+    assert wait_for(cancel.done)
+    assert h.wait_config({'winding_down'})
+    result = handle.get_result_async()
+    time.sleep(0.3)
+    assert not result.done()            # still running: the chart has not finished
+    h.send('finish')
+    assert wait_for(result.done)
+    assert result.result().status == GoalStatus.STATUS_CANCELED
+    assert list(result.result().result.sequence) == [2]
     client.destroy()
 
 

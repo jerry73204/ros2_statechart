@@ -23,6 +23,7 @@ activate enters the initial configuration, deactivate exits every state
 
 import ast
 import json
+import re
 import threading
 import time
 
@@ -359,8 +360,9 @@ class StatechartNode(LifecycleNode):
         def callback(request, response):
             if generic and not fixed:
                 return self._answer_send_event(request.event, request.data, response)
-            if fixed and fixed.startswith('{') and fixed.endswith('}'):
-                event = str(getattr(request, fixed[1:-1]))
+            if fixed and '{' in fixed:
+                # a template: each {field} is replaced by the request's field
+                event = re.sub(r'\{(\w+)\}', lambda m: str(getattr(request, m.group(1))), fixed)
             else:
                 event = fixed or getattr(request, 'event', '')
             if self.runner is None:
@@ -413,12 +415,15 @@ class StatechartNode(LifecycleNode):
                     goal_handle.abort()
                     return action_type.Result()
                 cancel_sent = False
+                waits = str(el.get('cancel_waits', 'false')).lower() in ('true', '1', 'yes')
                 while not done.wait(0.05):
                     if goal_handle.is_cancel_requested and not cancel_sent:
                         cancel_sent = True
+                        node._goal['cancel_requested'] = True
                         node._wait(node.runner.post(el.get('cancel_event')))
-                        node._goal['outcome'] = 'canceled'
-                        done.set()
+                        if not waits:
+                            node._goal['outcome'] = 'canceled'
+                            done.set()
                     if node.runner is None or not node.runner.running:
                         node._goal['outcome'] = node._goal['outcome'] or 'aborted'
                         done.set()
@@ -539,12 +544,21 @@ class StatechartNode(LifecycleNode):
         result_on = el.get('result_on')
         if result_on and any(matches(result_on, ev) for ev in record.events):
             response = goal['type'].Result()
+            available = {'result': response, 'configuration': record.target,
+                         'cancel_requested': bool(goal.get('cancel_requested'))}
             if el.get('result'):
-                built = self._call_user(el.get('result'), {'result': response,
-                                                           'configuration': record.target})
+                built = self._call_user(el.get('result'), available)
                 response = built if built is not None else response
+            outcome = 'succeeded'
+            if el.get('result_status'):
+                outcome = self._call_user(el.get('result_status'),
+                                          dict(available, result=response))
+                if outcome not in ('succeeded', 'aborted', 'canceled'):
+                    self.get_logger().error(f'result_status {el.get("result_status")} returned '
+                                            f'{outcome!r}; the goal is aborted')
+                    outcome = 'aborted'
             goal['result'] = response
-            goal['outcome'] = 'succeeded'
+            goal['outcome'] = outcome
             goal['done'].set()
 
 

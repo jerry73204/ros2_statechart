@@ -45,6 +45,7 @@ BOOL = 'bool'
 EVENT = 'event'              # an event name the kind sends
 STRING = 'string'
 DATA = 'data'                # the name of a datamodel value
+SECONDS = 'seconds'          # a duration: a number, or the name of a datamodel value
 ENUM = 'enum'
 PATH = 'path'                # a file path or package:// URL
 
@@ -191,6 +192,13 @@ def check_value(spec, raw):
         if spec.role == FLOAT:
             if float(raw) < 0:
                 return 'must not be negative'
+        elif spec.role == SECONDS:
+            try:
+                if float(raw) < 0:
+                    return 'must not be negative'
+            except ValueError:
+                if not raw.isidentifier():
+                    return 'must be a number of seconds or the name of a datamodel value'
         elif spec.role == INT:
             int(raw)
         elif spec.role == BOOL:

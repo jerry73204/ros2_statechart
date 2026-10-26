@@ -132,6 +132,18 @@ def test_rule_4_model_names():
     assert 4 not in found
 
 
+def test_rule_4_run_outputs_and_refusal_conditions_name_model_methods():
+    found = rules('<state id="a"><ros:on_entry run="no_such_hook"/>'
+                  '<transition event="go" target="a"/></state>')
+    assert any('no method "no_such_hook"' in m for m in found[4])
+    found = rules('<state id="a"><ros:refuse event="go" cond="nobody_knows" reason="no"/>'
+                  '<transition event="go" target="a"/></state>')
+    assert any('"nobody_knows"' in m for m in found[4])
+    assert rules('<state id="a"><ros:on_entry run="ok"/>'
+                 '<ros:refuse event="go" cond="ok" reason="no"/>'
+                 '<transition event="go" target="a"/></state>') == {}
+
+
 def test_rule_4_model_import_failure():
     spec = spec_of('<state id="a"/>', model=False)
     spec.model_class = 'my_robot.nothing:Here'
@@ -207,6 +219,11 @@ def test_rule_8_params_match_data():
     assert any('"speed"' in m for m in found[8])
     assert 8 not in rules('<datamodel><data id="speed" expr="1.0"/></datamodel>'
                           '<ros:param name="speed"/>' + GOOD)
+    # a ros:after delay given by name names a <data> item too
+    after = '<state id="a"><ros:after delay="patience" event="t"/>' \
+            '<transition event="t" target="a"/></state>'
+    assert any('"patience"' in m for m in rules(after)[8])
+    assert rules('<datamodel><data id="patience" expr="2.0"/></datamodel>' + after) == {}
 
 
 # Rule 9 -------------------------------------------------------------------------------

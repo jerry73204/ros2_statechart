@@ -345,3 +345,79 @@ def test_a_guard_must_return_a_bool():
         assert runner.configuration() == ['b']
     finally:
         runner.shutdown()
+
+
+def test_run_outputs_call_the_model_inside_the_macrostep():
+    class Model:
+
+        def __init__(self):
+            self.calls = []
+            self.count = 0
+
+        def entered(self, state, event, data, datamodel):
+            self.calls.append(('entry', state, event, data.get('n')))
+            self.count += 1
+
+        def left(self, state, event):
+            self.calls.append(('exit', state, event, None))
+
+        def counted(self):
+            return self.count == 1
+
+    model = Model()
+    runner, host = runner_of(
+        '<state id="a"><transition event="go" target="b"/></state>'
+        '<state id="b"><ros:on_entry run="entered"/><ros:on_exit run="left"/>'
+        '<transition cond="counted" target="c"/></state>'
+        '<state id="c"/>', model=model)
+    try:
+        runner.send('go', {'n': 7})
+        # the eventless transition saw what the entry run changed
+        assert runner.configuration() == ['c']
+        assert model.calls == [('entry', 'b', 'go', 7), ('exit', 'b', '', None)]
+        assert host.outputs == []          # run outputs are not the host's
+    finally:
+        runner.shutdown()
+
+
+def test_after_delay_may_name_a_datamodel_value():
+    runner, _ = runner_of(
+        '<datamodel><data id="patience" expr="0.1"/></datamodel>'
+        '<state id="a"><transition event="go" target="b"/></state>'
+        '<state id="b"><ros:after delay="patience" event="timeout"/>'
+        '<transition event="timeout" target="late"/></state><state id="late"/>')
+    try:
+        runner.send('go')
+        assert wait_config(runner, ['late']) is True
+    finally:
+        runner.shutdown()
+
+
+def test_a_refusal_may_have_a_condition():
+    runner, _ = runner_of(
+        '<datamodel><data id="busy" expr="False"/></datamodel>'
+        '<state id="a"><ros:refuse event="go" cond="busy" reason="busy now"/>'
+        '<transition event="go" target="b"/>'
+        '<transition event="load"><assign location="busy" expr="True"/></transition></state>'
+        '<state id="b"><transition event="back" target="a"/></state>')
+    try:
+        assert runner.send('go').configuration == ['b']
+        runner.send('back')
+        runner.send('load')
+        result = runner.send('go')
+        assert (result.handled, result.refusal) == (False, 'busy now')
+        assert result.configuration == ['a']
+    finally:
+        runner.shutdown()
+
+
+def test_a_refusal_of_several_events_refuses_each():
+    runner, _ = runner_of(
+        '<state id="a"><ros:refuse event="halt stop" reason="nothing to halt"/>'
+        '<transition event="go" target="a"/></state>')
+    try:
+        for event in ('halt', 'stop'):
+            result = runner.send(event)
+            assert (result.handled, result.refusal) == (False, 'nothing to halt')
+    finally:
+        runner.shutdown()
