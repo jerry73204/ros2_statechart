@@ -1,0 +1,87 @@
+name: Debian packages
+
+# A tag vX.Y.Z builds a Debian package of every package for Humble and Jazzy
+# (bloom-generate rosdebian, as the buildfarm does), installs them in a clean
+# ROS container, and attaches them to the GitHub release of the tag. Until the
+# packages are in the ROS apt repository (docs/RELEASE.md), this is the binary
+# install. Run by hand with a tag to build the packages of a release made
+# before this workflow existed.
+
+on:
+  push:
+    tags: ['v*']
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: existing tag to build and attach to its release (empty to build only)
+        required: false
+        default: ''
+
+permissions:
+  contents: write
+
+jobs:
+  debs:
+    name: ${{ matrix.distro }} Debian packages
+    runs-on: ubuntu-24.04
+    container:
+      image: ros:${{ matrix.distro }}-ros-base
+    strategy:
+      fail-fast: false
+      matrix:
+        distro: [humble, jazzy]
+    defaults:
+      run:
+        shell: bash
+    env:
+      TAG: ${{ inputs.tag || (startsWith(github.ref, 'refs/tags/v') && github.ref_name) || '' }}
+    steps:
+      - uses: actions/checkout@v7.0.1
+      - uses: actions/checkout@v7.0.1
+        with:
+          ref: ${{ env.TAG || github.sha }}
+          path: release
+      - name: Check that the tag is the packages' version
+        if: env.TAG != ''
+        working-directory: release
+        run: |
+          version=${TAG#v}
+          status=0
+          for f in */package.xml; do
+            v=$(sed -n 's|.*<version>\(.*\)</version>.*|\1|p' "$f")
+            if [ "$v" != "$version" ]; then
+              echo "::error file=$f::version $v, tag $TAG"
+              status=1
+            fi
+          done
+          exit $status
+      - name: Build and install
+        run: .github/scripts/build_debs.sh ${{ matrix.distro }} debs release
+      - name: Use the installed packages
+        run: .github/scripts/smoke_debs.sh ${{ matrix.distro }}
+      - uses: actions/upload-artifact@v7.0.2
+        with:
+          name: debs-${{ matrix.distro }}
+          path: debs/*.deb
+          if-no-files-found: error
+
+  release:
+    name: attach to the release
+    needs: debs
+    if: inputs.tag != '' || startsWith(github.ref, 'refs/tags/v')
+    runs-on: ubuntu-24.04
+    env:
+      GH_TOKEN: ${{ github.token }}
+      GH_REPO: ${{ github.repository }}
+      TAG: ${{ inputs.tag || github.ref_name }}
+    steps:
+      - name: Download the packages
+        run: gh run download ${{ github.run_id }} --dir debs --pattern 'debs-*'
+      - name: Create the release or add to it
+        run: |
+          tag=$TAG
+          if ! gh release view "$tag" > /dev/null 2>&1; then
+            gh release create "$tag" --verify-tag --title "$tag" --notes \
+              "Debian packages for Humble (Ubuntu 22.04) and Jazzy (Ubuntu 24.04), amd64. Install with \`sudo apt install ./ros-<distro>-*.deb\`; the changes are in each package's CHANGELOG.rst."
+          fi
+          gh release upload "$tag" debs/*/*.deb --clobber

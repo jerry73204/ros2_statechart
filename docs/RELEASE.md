@@ -46,6 +46,19 @@ The browser test (Playwright) and the nightly simulation (`nav2_bringup`,
    then edit), dated the day of the tag.
 4. Annotated tag `vX.Y.Z` pushed.
 
+## Debian packages on GitHub
+
+Pushing a tag `vX.Y.Z` runs `.github/workflows/debs.yml`: for Humble and
+Jazzy, in a stock `ros:<distro>-ros-base` container, it checks that the tag
+is the version in every `package.xml`, builds each package with
+`bloom-generate rosdebian` and `debian/rules binary` in dependency order
+(`.github/scripts/build_debs.sh`), installs them, runs a chart from the
+installed packages (`.github/scripts/smoke_debs.sh`), and attaches the
+`.deb` files to the tag's GitHub release, creating it if needed. Tests are
+not run in this build; CI runs them. To build the packages of an existing
+tag again, run the workflow by hand with that tag. Rolling is left out: its
+base image changes often and has no Nav2.
+
 ## Steps for the maintainer (not done by this repository's CI)
 
 1. Create a release repository, for example
