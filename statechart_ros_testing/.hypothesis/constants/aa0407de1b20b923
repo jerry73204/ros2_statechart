@@ -1,0 +1,4 @@
+# file: /usr/lib/python3/dist-packages/osrf_pycommon/process_utils/execute_process_pty.py
+# hypothesis_version: 6.151.5
+
+[0.01, 'Text file busy', 'nt', '{0}']

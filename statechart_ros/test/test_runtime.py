@@ -289,6 +289,22 @@ def test_stop_exits_every_state_and_cancels_invokes_then_start_restarts():
         runner.shutdown()
 
 
+def test_every_run_starts_with_the_initial_datamodel():
+    runner, _ = runner_of(
+        '<datamodel><data id="n" expr="1"/></datamodel>'
+        '<state id="a"><transition event="go" target="a">'
+        '<assign location="n" expr="n + 1"/></transition></state>')
+    try:
+        runner.send('go')
+        assert runner.model.n == 2
+        for _ in range(2):
+            runner.stop()
+            runner.start()
+            assert runner.model.n == 1
+    finally:
+        runner.shutdown()
+
+
 def test_reaching_a_top_level_final_ends_the_run_with_its_data():
     runner, _ = runner_of(
         '<state id="a"><transition event="go" target="done"/></state>'

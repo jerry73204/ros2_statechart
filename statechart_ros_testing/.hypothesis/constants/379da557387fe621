@@ -1,0 +1,4 @@
+# file: /usr/lib/python3/dist-packages/lark/parsers/grammar_analysis.py
+# hypothesis_version: 6.151.5
+
+['$END', '$root_', ', ', '<%s : %s * %s>', 'LR0ItemSet', 'RulePtr', 'closure', 'index', 'kernel', 'lookaheads', 'rule', 'transitions', '{%s | %s}']

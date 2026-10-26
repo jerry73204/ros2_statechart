@@ -1,0 +1,4 @@
+# file: /usr/lib/python3/dist-packages/pydocstyle/parser.py
+# hypothesis_version: 6.151.5
+
+['#', '# noqa', '(', '(.)([A-Z]+)', '([', ')', ')]', ',', ', ', ':', ';', '=', '@', 'AllError', 'Cannot parse file.', 'Class', 'Definition', 'Function', 'Method', 'Module', 'NestedClass', 'NestedFunction', 'Package', 'ParseError', 'Parser', 'StringIO', '\\1 \\2', '_', '__', '__all__', '__call__', '__future__', '__init__', '__init__.py', '__new__', '_dunder_all', '_source', 'all', 'as', 'async', 'at module level', 'callable_args', 'children', 'class', 'decorators', 'def', 'docstring', 'dunder_all_error', 'end', 'exec', 'from', 'future_imports', 'got_newline: %s', 'import', 'name', 'name arguments', 'noqa: ', 'overload', 'parent', "parsing %s '%s'", 'parsing module.', 'private', 'public', 'runTest', 'skipped_error_codes', 'start', 'staticmethod', 'test', 'tk.{}', '{}={!r}']

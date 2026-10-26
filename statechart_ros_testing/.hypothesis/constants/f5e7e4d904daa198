@@ -1,0 +1,4 @@
+# file: /usr/lib/python3/dist-packages/snowballstemmer/turkish_stemmer.py
+# hypothesis_version: 6.151.5
+
+["'", 'a', 'ad', 'b', 'c', 'ca', 'casına', 'ce', 'cesine', 'd', 'da', 'dan', 'de', 'den', 'di', 'dik', 'dim', 'din', 'dir', 'du', 'duk', 'dum', 'dun', 'dur', 'dü', 'dük', 'düm', 'dün', 'dür', 'dı', 'dık', 'dım', 'dın', 'dır', 'e', 'g', 'i', 'im', 'in', 'iz', 'k', 'ken', 'ki', 'la', 'lar', 'ları', 'le', 'ler', 'leri', 'm', 'miz', 'miş', 'muz', 'muş', 'müz', 'müş', 'mız', 'mış', 'n', 'na', 'nda', 'ndan', 'nde', 'nden', 'ne', 'ni', 'niz', 'nu', 'nuz', 'nü', 'nüz', 'nı', 'nız', 'o', 'p', 's', 'sa', 'sak', 'sam', 'san', 'se', 'sek', 'sem', 'sen', 'sin', 'siniz', 'soy', 'sun', 'sunuz', 'sün', 'sünüz', 'sın', 'sınız', 't', 'ta', 'tan', 'te', 'ten', 'ti', 'tik', 'tim', 'tin', 'tir', 'tu', 'tuk', 'tum', 'tun', 'tur', 'tü', 'tük', 'tüm', 'tün', 'tür', 'tı', 'tık', 'tım', 'tın', 'tır', 'u', 'um', 'un', 'uz', 'y', 'ç', 'ö', 'ü', 'üm', 'ün', 'üz', 'ğ', 'ı', 'ım', 'ın', 'ız']

@@ -414,6 +414,11 @@ class ChartRunner:
         source = []
         start = time.monotonic()
         cls = engine_class or self.spec.engine_class
+        if getattr(cls, '_sc_ros_used', False):
+            # The engine sets the datamodel up only for a class's first instance (E23).
+            from statechart_ros.loader import new_engine_class
+            cls = new_engine_class(self.spec)
+        cls._sc_ros_used = True
         self.sm = cls(model=self.model, listeners=[self.listener])
         for key, value in self._initial_data.items():
             setattr(self.model, key, value)

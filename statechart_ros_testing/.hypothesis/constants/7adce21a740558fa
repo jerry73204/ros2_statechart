@@ -1,0 +1,4 @@
+# file: /usr/lib/python3/dist-packages/flake8_quotes/__init__.py
+# hypothesis_version: 6.151.5
+
+['"', '"""', '"\'\'\'', "'", '\'"""', "'''", '(none)', '-', '--avoid-escape', '--docstring-quotes', '--inline-quotes', '--multiline-quotes', '--no-avoid-escape', '--quotes', 'Q000 ', 'Q001 ', 'Q002 ', 'avoid_escape', 'bad_docstring', 'bad_multiline', 'bad_single', 'col', 'docstring_quotes', 'double', 'good_docstring', 'good_multiline', 'good_single', 'line', 'message', 'multiline_quotes', 'noqa', 'parse_from_config', 'quotes', 'r', 'single', 'single_error_message', 'stdin', 'store', 'store_false', 'store_true']

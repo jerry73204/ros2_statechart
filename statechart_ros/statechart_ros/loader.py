@@ -462,13 +462,22 @@ def load_chart(source, params=None, name=None, text=None, load_engine=True):
 def load_engine_class(spec):
     """Load the expanded document with python-statemachine (restricted datamodel)."""
     from statemachine.exceptions import InvalidDefinition
-    from statemachine.io import load
     try:
-        spec.engine_class = load(spec.engine_doc, format='scxml', trusted=False,
-                                 name=spec.name)
+        spec.engine_class = new_engine_class(spec)
     except (InvalidDefinition, ValueError, KeyError, TypeError) as exc:
         spec.finding(1, 2, f'the engine refused the chart: {exc}')
     return spec.engine_class
+
+
+def new_engine_class(spec):
+    """
+    Return a new engine class for a chart the engine already accepted.
+
+    The engine initialises the ``<datamodel>`` once per class (ENGINE.md E23),
+    so every run after the first needs a class of its own.
+    """
+    from statemachine.io import load
+    return load(spec.engine_doc, format='scxml', trusted=False, name=spec.name)
 
 
 def _serialize(root):

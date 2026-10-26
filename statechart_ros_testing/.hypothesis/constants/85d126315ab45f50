@@ -1,0 +1,4 @@
+# file: /usr/lib/python3/dist-packages/osrf_pycommon/process_utils/execute_process_nopty.py
+# hypothesis_version: 6.151.5
+
+[1024, 'Bad file descriptor', 'Input/output error', 'fileno', 'linux', 'win', '{0}']

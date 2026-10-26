@@ -1,0 +1,4 @@
+# file: /usr/lib/python3/dist-packages/flake8/main/debug.py
+# hypothesis_version: 6.151.5
+
+['flake8', 'local', 'platform', 'plugin', 'plugins', 'python_version', 'system', 'version']

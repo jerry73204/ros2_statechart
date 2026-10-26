@@ -64,6 +64,7 @@ python-statemachine implements statecharts with SCXML semantics:
 | E20 | `&&`, `\|\|`, `===`, `!==`, `true`, `false`, `null` in a condition | normalised to `and`, `or`, `==`, `!=`, `True`, `False`, `None` before the restricted evaluator; `!x` is refused at load (a syntax error) |
 | E21 | Member access on a dict datamodel value, `p.k` | fails at run time (`error.execution`); `p['k']` works |
 | E22 | `x in [...]`, `x is y` in a condition | refused at load, with a `KeyError` from the restricted evaluator |
+| E23 | A second instance of the same class loaded from SCXML | gets no `<datamodel>` values: the reader's datamodel action runs once per class (a closure flag), so the runner loads a new class for every run after the first |
 
 ## Answered in P0
 

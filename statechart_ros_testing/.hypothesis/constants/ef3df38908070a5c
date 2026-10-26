@@ -1,0 +1,4 @@
+# file: /usr/lib/python3/dist-packages/snowballstemmer/german_stemmer.py
+# hypothesis_version: 6.151.5
+
+['U', 'Y', 'a', 'ae', 'b', 'd', 'e', 'em', 'en', 'end', 'er', 'erin', 'erinnen', 'ern', 'es', 'est', 'et', 'f', 'g', 'geordn', 'h', 'heit', 'i', 'ig', 'ik', 'intern', 'isch', 'k', 'keit', 'l', 'lich', 'ln', 'lns', 'm', 'n', 'nis', 'o', 'oe', 'plan', 'qu', 'r', 's', 'ss', 'st', 'syst', 't', 'tick', 'tr', 'u', 'ue', 'ung', 'y', 'z', 'ß', 'ä', 'ö', 'ü']

@@ -42,6 +42,11 @@ jobs:
         run: |
           source ws/install/setup.bash
           launch_test ws/src/ros2_statechart/statechart_ros_nav2/test_sim/sim_patrol.py
+      - name: Tutorial 3 as written
+        run: |
+          source ws/install/setup.bash
+          cd ws/src/ros2_statechart
+          python3 docs/tutorials/check_tutorial.py --tag nightly docs/tutorials/03-nav2-patrol.md
       - name: Logs
         if: failure()
         uses: actions/upload-artifact@v7.0.2

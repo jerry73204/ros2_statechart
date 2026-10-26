@@ -1,0 +1,4 @@
+# file: /usr/lib/python3/dist-packages/flake8/options/parse_args.py
+# hypothesis_version: 6.151.5
+
+['--output-file', 'parse_options']

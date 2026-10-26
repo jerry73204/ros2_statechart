@@ -1,0 +1,4 @@
+# file: /usr/lib/python3/dist-packages/snowballstemmer/finnish_stemmer.py
+# hypothesis_version: 6.151.5
+
+['a', 'aa', 'an', 'b', 'c', 'd', 'den', 'e', 'ee', 'eja', 'ejä', 'en', 'f', 'g', 'h', 'han', 'hen', 'hin', 'hon', 'hän', 'hön', 'i', 'ie', 'ii', 'imma', 'immi', 'immä', 'impa', 'impi', 'impä', 'ine', 'j', 'k', 'kaan', 'kin', 'ko', 'kse', 'ksi', 'kään', 'kö', 'l', 'lla', 'lle', 'llä', 'lta', 'ltä', 'm', 'mma', 'mme', 'mmi', 'mmä', 'mpa', 'mpi', 'mpä', 'n', 'na', 'ni', 'nne', 'nsa', 'nsä', 'nä', 'o', 'oo', 'p', 'pa', 'po', 'pä', 'q', 'r', 's', 'seen', 'si', 'siin', 'ssa', 'ssä', 'sta', 'sti', 'stä', 't', 'ta', 'tta', 'tten', 'ttä', 'tä', 'u', 'uu', 'v', 'w', 'x', 'y', 'z', 'ä', 'än', 'ää', 'ö', 'öö']

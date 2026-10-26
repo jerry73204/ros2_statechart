@@ -1,0 +1,4 @@
+# file: /usr/lib/python3/dist-packages/snowballstemmer/norwegian_stemmer.py
+# hypothesis_version: 6.151.5
+
+['a', 'amm', 'ande', 'ane', 'ar', 'as', 'ast', 'b', 'c', 'd', 'dt', 'e', 'ede', 'edes', 'eig', 'eleg', 'elig', 'elov', 'els', 'en', 'ende', 'endes', 'ene', 'enes', 'ens', 'er', 'ers', 'ert', 'erte', 'es', 'et', 'ets', 'f', 'g', 'giv', 'h', 'hav', 'het', 'heten', 'hetene', 'hetenes', 'hetens', 'heter', 'hetslov', 'i', 'ig', 'ind', 'j', 'k', 'kap', 'kk', 'l', 'leg', 'lig', 'lov', 'lt', 'm', 'n', 'nk', 'o', 'omm', 'p', 'pp', 'r', 's', 'skap', 'slov', 't', 'u', 'v', 'vt', 'y', 'z', 'å', 'æ', 'ê', 'ò', 'ó', 'ô', 'ø', 'øst']

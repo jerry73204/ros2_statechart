@@ -1,0 +1,4 @@
+# file: /usr/lib/python3/dist-packages/lark/parsers/cyk.py
+# hypothesis_version: 6.151.5
+
+['%s -> %s', ', ', 'Parsing failed.', 'RuleNode(%s, [%s])', 'Split', 'Term', '_', '_%d', '__', '__SP_', '__SP_%s', '__T_', '__T_%s']

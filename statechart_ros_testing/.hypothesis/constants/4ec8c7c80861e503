@@ -1,0 +1,4 @@
+# file: /usr/lib/python3/dist-packages/flake8_comprehensions/__init__.py
+# hypothesis_version: 6.151.5
+
+['C400', 'C401', 'C402', 'C403', 'C404', 'C405', 'C406', 'C408', 'C409', 'C410', 'C411', 'C413', 'C414', 'C415', 'C416', 'C417', 'C418', 'C419', 'C420', 'all', 'any', 'dict', 'dict comprehension', 'generator expression', 'list', 'map', 'reverse', 'reversed', 'set', 'sorted', 'tree', 'tuple']

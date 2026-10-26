@@ -94,3 +94,41 @@ jobs:
           source ws/install/setup.bash
           cd ws/src/ros2_statechart/statechart_ros_viewer
           python3 -m pytest -v -p no:cacheprovider test_browser/browser_viewer.py
+
+  tutorials:
+    name: tutorials on a fresh Ubuntu 24.04 (jazzy)
+    runs-on: ubuntu-24.04
+    container:
+      image: ubuntu:noble
+    timeout-minutes: 40
+    defaults:
+      run:
+        shell: bash
+    steps:
+      - uses: ros-tooling/setup-ros@0.7.19
+        with:
+          required-ros-distributions: jazzy
+      - uses: actions/checkout@v7.0.1
+        with:
+          path: ws/src/ros2_statechart
+      - name: Install dependencies
+        run: |
+          apt-get update
+          apt-get install -y ros-jazzy-turtlesim
+          source /opt/ros/jazzy/setup.bash
+          rosdep update
+          rosdep install -y --from-paths ws/src --ignore-src --rosdistro jazzy
+      - name: Build
+        run: |
+          source /opt/ros/jazzy/setup.bash
+          cd ws
+          colcon build --event-handlers console_cohesion+
+      - name: Tutorials 1, 2, 4 and 5 as written
+        env:
+          QT_QPA_PLATFORM: offscreen
+        run: |
+          source ws/install/setup.bash
+          cd ws/src/ros2_statechart
+          python3 docs/tutorials/check_tutorial.py docs/tutorials/01-first-chart.md \
+            docs/tutorials/02-nesting-and-history.md docs/tutorials/04-testing.md \
+            docs/tutorials/05-composing.md

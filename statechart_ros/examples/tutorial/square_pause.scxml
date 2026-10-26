@@ -1,0 +1,57 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- Tutorial 2: the square of tutorial 1 with its drawing states nested in
+     DRAWING, which answers "stop" and "go" once for both, and a pause that
+     returns to the state it left through a history state. -->
+<scxml xmlns="http://www.w3.org/2005/07/scxml"
+       xmlns:ros="https://github.com/jerry73204/ros2_statechart/ns/1"
+       version="1.0" datamodel="python" initial="IDLE" name="square">
+
+  <ros:service_server name="~/command" type="statechart_ros_msgs/srv/SendEvent"/>
+
+  <datamodel>
+    <data id="sides" expr="0"/>
+  </datamodel>
+
+  <state id="IDLE">
+    <transition event="go" target="DRAWING">
+      <assign location="sides" expr="0"/>
+    </transition>
+    <ros:ignore event="stop" reason="already idle"/>
+    <ros:refuse event="pause" reason="not drawing"/>
+    <ros:ignore event="resume" reason="not paused"/>
+  </state>
+
+  <state id="DRAWING" initial="FORWARD">
+    <history id="DRAWING_H" type="shallow">
+      <transition target="FORWARD"/>
+    </history>
+    <transition event="stop" target="IDLE"/>
+    <transition event="pause" target="PAUSED"/>
+    <ros:refuse event="go" reason="already drawing"/>
+    <ros:ignore event="resume" reason="not paused"/>
+
+    <state id="FORWARD">
+      <ros:on_entry publish="turtle1/cmd_vel" type="geometry_msgs/msg/Twist"
+                    value="{linear: {x: 2.0}}"/>
+      <ros:after delay="1.5" event="moved"/>
+      <transition event="moved" target="TURN"/>
+    </state>
+
+    <state id="TURN">
+      <onentry><assign location="sides" expr="sides + 1"/></onentry>
+      <ros:on_entry publish="turtle1/cmd_vel" type="geometry_msgs/msg/Twist"
+                    value="{angular: {z: 1.5708}}"/>
+      <ros:after delay="1.5" event="turned"/>
+      <transition event="turned" cond="sides &lt; 4" target="FORWARD"/>
+      <transition event="turned" target="IDLE"/>
+    </state>
+  </state>
+
+  <state id="PAUSED">
+    <ros:on_entry publish="turtle1/cmd_vel" type="geometry_msgs/msg/Twist" value="{}"/>
+    <transition event="resume" target="DRAWING_H"/>
+    <transition event="stop" target="IDLE"/>
+    <ros:refuse event="go" reason="paused: resume or stop first"/>
+    <ros:ignore event="pause" reason="already paused"/>
+  </state>
+</scxml>

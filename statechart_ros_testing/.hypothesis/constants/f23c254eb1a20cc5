@@ -1,0 +1,4 @@
+# file: /usr/lib/python3/dist-packages/mccabe.py
+# hypothesis_version: 6.151.5
+
+['%d:%d: %r', '%s -- %s;', '%s%s', '%s:%d:1: %s', '--dot', '--max-complexity', '--min', '-d', '-m', '.', '0.7.0', 'C901', 'If %d', 'Loop %d', 'Stmt %d', 'True', 'TryExcept %d', 'With %d', '__main__', 'action', 'circle', 'config_options', 'default', 'dot', 'exec', 'graph {', 'help', 'int', 'latin-1', 'max-complexity', 'mccabe', 'parse_from_config', 'point', 'r', 'rU', 'rb', 'stdin', 'store', 'store_true', 'subgraph {', 'threshold', 'type', 'visit', '}']

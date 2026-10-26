@@ -349,3 +349,17 @@ def test_e18_a_data_item_named_state_is_overwritten_by_the_engine():
     sm = cls()
     sm.send('go')
     assert sm.model.state == 'b'
+
+
+def test_e23_the_datamodel_is_set_up_only_for_the_first_instance_of_a_class():
+    cls = load_chart('<datamodel><data id="n" expr="1"/></datamodel>'
+                     '<state id="a"/>')
+
+    class Data:
+        pass
+
+    first, second = Data(), Data()
+    cls(model=first)
+    assert first.n == 1
+    cls(model=second)
+    assert not hasattr(second, 'n')

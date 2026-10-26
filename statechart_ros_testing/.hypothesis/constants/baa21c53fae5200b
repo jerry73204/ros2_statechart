@@ -1,0 +1,4 @@
+# file: /usr/lib/python3/dist-packages/flake8/processor.py
+# hypothesis_version: 6.151.5
+
+['"""', "'''", '([{', ',', '-', '\\\n', 'checker_state', 'latin-1', 'logical lines', 'stdin', 'x', '{', '{[(', '}', '}])', 'ï»¿', '\ufeff']

@@ -7,7 +7,7 @@ publishes on entry, which topics and services turn into events. The chart is
 run by [python-statemachine](https://github.com/fgmacedo/python-statemachine),
 used as released, inside one ROS 2 node.
 
-Status: in development. Done: P0 (engine pinned by tests), P1 (loader, validator, `validate` / `diagram` / `export`), P2 (`statechart_node`, turtlesim example), P3 (Nav2 kinds, patrol example on Nav2's simulation), P4 (testing kit), P5 (web viewer, `list` / `show` / `echo` / `send`), P6 (child charts, charts hosted as actions); see [docs/phases](docs/phases/).
+Status: 0.1.0, every phase of [docs/phases](docs/phases/) done (P0 to P7). Start with the [tutorials](docs/tutorials/README.md); install from source until the packages reach the ROS apt repositories ([docs/RELEASE.md](docs/RELEASE.md)).
 
 ## Why statecharts
 
@@ -94,7 +94,7 @@ ros2 run statechart_ros_viewer viewer       # http://localhost:8095, live states
 ros2 statechart show /mission               # active states in the terminal
 ```
 
-## Packages (planned)
+## Packages
 
 | Package | Contents |
 |---|---|
@@ -108,13 +108,13 @@ ros2 statechart show /mission               # active states in the terminal
 
 ## Documents
 
-- [docs/DESIGN.md](docs/DESIGN.md): goals, architecture, execution model, Nav2, viewer, testing, packaging.
-- [docs/FORMAT.md](docs/FORMAT.md): the `ros:` extension, element by element, and how it maps onto SCXML.
-- [docs/ENGINE.md](docs/ENGINE.md): what python-statemachine does, verified by tests, and what the design relies on.
-- [docs/NAV2.md](docs/NAV2.md): the Nav2 kinds, poses, outcomes and error names, the patrol example.
-- [docs/TESTING.md](docs/TESTING.md): testing charts: validation, scenarios, properties, simulation.
-- [docs/VIEWER.md](docs/VIEWER.md): the web viewer, bag replay, and the `ros2 statechart` verbs.
-- [docs/phases/](docs/phases/): the implementation plan, one file per phase.
+[docs/README.md](docs/README.md) lists them all:
+[concepts](docs/CONCEPTS.md), [tutorials](docs/tutorials/README.md),
+the [format reference](docs/FORMAT.md), the guides for
+[Nav2](docs/NAV2.md), [testing](docs/TESTING.md) and the
+[viewer](docs/VIEWER.md), [migrating from SMACH-style libraries](docs/MIGRATION.md),
+[model checking notes](docs/MODEL_CHECKING.md), the [design](docs/DESIGN.md),
+the [engine facts](docs/ENGINE.md) and [releasing](docs/RELEASE.md).
 
 ## Licence
 

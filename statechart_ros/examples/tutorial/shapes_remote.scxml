@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- Tutorial 5: the parent of shapes.scxml with the square drawn by a chart
+     hosted in another node (run_as_action:=~/run on /square_server). -->
+<scxml xmlns="http://www.w3.org/2005/07/scxml"
+       xmlns:ros="https://github.com/jerry73204/ros2_statechart/ns/1"
+       version="1.0" datamodel="python" initial="IDLE" name="shapes_remote">
+
+  <ros:service_server name="~/command" type="statechart_ros_msgs/srv/SendEvent"/>
+
+  <state id="IDLE">
+    <transition event="go" target="DRAW"/>
+    <ros:ignore event="stop" reason="already idle"/>
+  </state>
+
+  <state id="DRAW">
+    <ros:action server="/square_server/run" type="statechart_ros_msgs/action/RunStatechart"/>
+    <ros:outcome status="succeeded" target="DONE"/>
+    <ros:outcome status="*" target="IDLE"/>
+    <transition event="stop" target="IDLE"/>
+    <ros:refuse event="go" reason="already drawing"/>
+  </state>
+
+  <state id="DONE">
+    <transition event="go" target="DRAW"/>
+    <ros:ignore event="stop" reason="nothing to stop"/>
+  </state>
+</scxml>

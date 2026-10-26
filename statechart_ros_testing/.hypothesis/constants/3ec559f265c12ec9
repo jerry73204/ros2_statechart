@@ -1,0 +1,4 @@
+# file: /usr/lib/python3/dist-packages/flake8/plugins/pyflakes.py
+# hypothesis_version: 6.151.5
+
+['--builtins', '--doctests', 'AssertTuple', 'BreakOutsideLoop', 'ContinueOutsideLoop', 'DefaultExceptNotLast', 'DoctestSyntaxError', 'DuplicateArgument', 'F401', 'F402', 'F403', 'F404', 'F405', 'F406', 'F407', 'F501', 'F502', 'F503', 'F504', 'F505', 'F506', 'F507', 'F508', 'F509', 'F521', 'F522', 'F523', 'F524', 'F525', 'F541', 'F542', 'F601', 'F602', 'F621', 'F622', 'F631', 'F632', 'F633', 'F634', 'F701', 'F702', 'F704', 'F706', 'F707', 'F721', 'F722', 'F811', 'F821', 'F822', 'F823', 'F824', 'F831', 'F841', 'F842', 'F901', 'F999', 'IfTuple', 'ImportStarUsage', 'ImportStarUsed', 'InvalidPrintSyntax', 'IsLiteral', 'LateFutureImport', 'RaiseNotImplemented', 'RedefinedWhileUnused', 'UndefinedExport', 'UndefinedLocal', 'UndefinedName', 'UnusedAnnotation', 'UnusedImport', 'UnusedVariable', 'YieldOutsideFunction', 'col', 'store_true', '{} {}']

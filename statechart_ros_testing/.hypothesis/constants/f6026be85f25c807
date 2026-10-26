@@ -1,0 +1,4 @@
+# file: /usr/lib/python3/dist-packages/flake8_builtins.py
+# hypothesis_version: 6.151.5
+
+['.py', '1.5.2', 'AsyncFor', 'AsyncFunctionDef', 'AsyncWith', '_', '__doc__', '__init__.py', '__name__', 'builtins', 'credits', 'elts', 'flake8_builtins', 'id', 'kwonlyargs', 'posonlyargs', 'stdin', 'stdlib_module_names']

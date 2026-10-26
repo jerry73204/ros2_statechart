@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- Tutorial 5: one square as a chart that ends. It declares no inputs: a
+     parent runs it (ros:chart) or a node hosts it as an action
+     (run_as_action). Its final state "drawn" is the outcome. -->
+<scxml xmlns="http://www.w3.org/2005/07/scxml"
+       xmlns:ros="https://github.com/jerry73204/ros2_statechart/ns/1"
+       version="1.0" datamodel="python" initial="FORWARD" name="square_child">
+
+  <datamodel>
+    <data id="sides" expr="0"/>
+  </datamodel>
+
+  <state id="FORWARD">
+    <ros:on_entry publish="turtle1/cmd_vel" type="geometry_msgs/msg/Twist"
+                  value="{linear: {x: 2.0}}"/>
+    <ros:after delay="1.5" event="moved"/>
+    <transition event="moved" target="TURN"/>
+  </state>
+
+  <state id="TURN">
+    <onentry><assign location="sides" expr="sides + 1"/></onentry>
+    <ros:on_entry publish="turtle1/cmd_vel" type="geometry_msgs/msg/Twist"
+                  value="{angular: {z: 1.5708}}"/>
+    <ros:after delay="1.5" event="turned"/>
+    <transition event="turned" cond="sides &lt; 4" target="FORWARD"/>
+    <transition event="turned" target="drawn"/>
+  </state>
+
+  <final id="drawn">
+    <donedata><param name="sides" expr="sides"/></donedata>
+  </final>
+</scxml>

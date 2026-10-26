@@ -1,0 +1,42 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- Tutorial 5: a parent that draws two squares with a child chart, clearing
+     the screen between them. Leaving DRAW (on "stop") stops the child. -->
+<scxml xmlns="http://www.w3.org/2005/07/scxml"
+       xmlns:ros="https://github.com/jerry73204/ros2_statechart/ns/1"
+       version="1.0" datamodel="python" initial="IDLE" name="shapes">
+
+  <ros:service_server name="~/command" type="statechart_ros_msgs/srv/SendEvent"/>
+
+  <datamodel>
+    <data id="squares" expr="0"/>
+  </datamodel>
+
+  <state id="IDLE">
+    <transition event="go" target="WORKING">
+      <assign location="squares" expr="0"/>
+    </transition>
+    <ros:ignore event="stop" reason="already idle"/>
+  </state>
+
+  <state id="WORKING" initial="DRAW">
+    <transition event="stop" target="IDLE"/>
+    <ros:refuse event="go" reason="already drawing"/>
+
+    <state id="DRAW">
+      <ros:chart src="square_child.scxml"/>
+      <ros:outcome status="drawn" target="CLEAR"/>
+    </state>
+
+    <state id="CLEAR">
+      <onentry><assign location="squares" expr="squares + 1"/></onentry>
+      <ros:service_call service="clear" type="std_srvs/srv/Empty"/>
+      <ros:outcome status="*" target="NEXT"/>
+    </state>
+
+    <!-- Passed through at once: eventless transitions, the first that holds. -->
+    <state id="NEXT">
+      <transition cond="squares &lt; 2" target="DRAW"/>
+      <transition target="IDLE"/>
+    </state>
+  </state>
+</scxml>

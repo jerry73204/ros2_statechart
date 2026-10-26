@@ -1,0 +1,4 @@
+# file: /usr/lib/python3/dist-packages/lark/parsers/earley_common.py
+# hypothesis_version: 6.151.5
+
+['%s (%d)', '_hash', 'expect', 'is_complete', 'node', 'previous', 'ptr', 'rule', 's', 'start', '{} ::= {}* {}']

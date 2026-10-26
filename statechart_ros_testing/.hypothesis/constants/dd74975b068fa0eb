@@ -1,0 +1,4 @@
+# file: /usr/lib/python3/dist-packages/snowballstemmer/porter_stemmer.py
+# hypothesis_version: 6.151.5
+
+['Y', 'a', 'able', 'abli', 'al', 'alism', 'aliti', 'alize', 'alli', 'ance', 'anci', 'ant', 'at', 'ate', 'ation', 'ational', 'ative', 'ator', 'bb', 'biliti', 'bl', 'ble', 'dd', 'e', 'ed', 'ee', 'eed', 'eli', 'ement', 'ence', 'enci', 'ent', 'entli', 'er', 'ff', 'ful', 'fulness', 'gg', 'i', 'ible', 'ic', 'ical', 'icate', 'iciti', 'ies', 'ing', 'ion', 'ism', 'iti', 'ive', 'iveness', 'iviti', 'iz', 'ization', 'ize', 'izer', 'l', 'ment', 'mm', 'ness', 'nn', 'o', 'ou', 'ous', 'ousli', 'ousness', 'pp', 'rr', 's', 'ss', 'sses', 't', 'tion', 'tional', 'tt', 'u', 'w', 'x', 'y']

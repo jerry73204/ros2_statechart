@@ -1,0 +1,4 @@
+# file: /usr/lib/python3/dist-packages/osrf_pycommon/process_utils/impl.py
+# hypothesis_version: 6.151.5
+
+['PATH', 'PATHEXT', 'mode', 'path', 'win32']

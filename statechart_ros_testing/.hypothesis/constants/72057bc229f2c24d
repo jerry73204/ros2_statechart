@@ -1,0 +1,4 @@
+# file: /usr/lib/python3/dist-packages/flake8/plugins/finder.py
+# hypothesis_version: 6.151.5
+
+[', ', '-', '3.7', '5.0', '=', 'EW', 'F', '_', 'enable_extensions', 'extension', 'flake8', 'flake8-colors', 'flake8.extension', 'flake8.report', 'flake8:local-plugins', 'local', 'logical_line', 'name', 'off_by_default', 'paths', 'physical_line', 'pycodestyle', 'pyflakes', 'report', 'require_plugins', 'self', 'tree', 'version']

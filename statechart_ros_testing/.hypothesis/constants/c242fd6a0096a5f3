@@ -1,0 +1,4 @@
+# file: /usr/lib/python3/dist-packages/pydocstyle/violations.py
+# hypothesis_version: 6.151.5
+
+['\n\n{explanation}\n\n', '\n\n{lines}\n', '        ...\n', '+', '+\n', '-', 'D1', 'D100', 'D101', 'D102', 'D103', 'D104', 'D105', 'D106', 'D107', 'D2', 'D200', 'D201', 'D202', 'D203', 'D204', 'D205', 'D206', 'D207', 'D208', 'D209', 'D210', 'D211', 'D212', 'D213', 'D214', 'D215', 'D3', 'D300', 'D301', 'D302', 'D4', 'D400', 'D401', 'D402', 'D403', 'D404', 'D405', 'D406', 'D407', 'D408', 'D409', 'D410', 'D411', 'D412', 'D413', 'D414', 'D415', 'D416', 'D417', 'D418', 'D419', 'Docstring is empty', 'Error', 'ErrorParams', 'ErrorRegistry', 'Missing Docstrings', 'Quotes Issues', 'Whitespace Issues', 'code', 'context', 'conventions', 'definition', 'explanation', 'filename', "found '{0}'", 'found {0}', 'found {0}-quotes', 'google', 'in section {0!r}', 'line', 'lines', 'message', 'not {0!r}', 'numpy', 'pep257', 'short_desc', '{0!r}', '{0!r}, not {1!r}', '|', '|\n', '| ']

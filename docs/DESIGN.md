@@ -257,6 +257,8 @@ and in invoke kinds, which are Python packages installed like any other.
   passing.
 - Semantic versioning; the `ros:` namespace URI carries the format's major
   version (`.../ns/1`).
+- [RELEASE.md](RELEASE.md) has the versions, changelogs, rosdep notes and
+  the maintainer's release steps.
 
 ## 13. Decisions
 

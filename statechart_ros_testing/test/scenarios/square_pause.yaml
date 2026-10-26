@@ -1,0 +1,30 @@
+# Tutorial 4: the chart of tutorial 2, step by step, without ROS.
+chart: ../../../statechart_ros/examples/tutorial/square_pause.scxml
+steps:
+  - expect: [IDLE]
+  - send: resume              # ignored: answered, nothing changes
+    handled: true
+    expect: [IDLE]
+  - send: go
+    expect: [DRAWING, FORWARD]
+    outputs: [[publish, turtle1/cmd_vel, {linear: {x: 2.0}}]]
+  - advance: 1.4              # the timeout is 1.5 s: not yet
+    expect: [FORWARD]
+  - advance: 0.1
+    expect: [TURN]
+    datamodel: {sides: 1}
+  - send: pause
+    expect: [PAUSED]
+    expect_not: [DRAWING]
+    outputs: [[publish, turtle1/cmd_vel, {}]]
+  - advance: 10.0             # the turn's timeout went with the state
+    expect: [PAUSED]
+  - send: go
+    refused: 'paused: resume or stop first'
+  - send: resume              # back to TURN through the history state
+    expect: [DRAWING, TURN]
+    datamodel: {sides: 2}     # TURN is entered again: its entry runs again
+  - advance: 1.5
+    expect: [FORWARD]
+  - send: stop
+    expect: [IDLE]

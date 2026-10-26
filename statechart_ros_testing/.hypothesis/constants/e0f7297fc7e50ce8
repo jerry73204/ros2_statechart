@@ -1,0 +1,4 @@
+# file: /usr/lib/python3/dist-packages/flake8/options/manager.py
+# hypothesis_version: 6.151.5
+
+['*', '-', '--', '--version', 'NO', '_', '_ARG', 'action', 'add_options', 'choices', 'const', 'default', 'dest', 'filename', 'filenames', 'flake8', 'flake8.extension', 'help', 'metavar', 'nargs', 'required', 'type', 'version']
