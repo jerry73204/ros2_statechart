@@ -32,7 +32,18 @@ from statechart_ros_msgs.msg import StatechartStatus, Transition
 from statechart_ros_msgs.srv import SendEvent
 
 HERE = os.path.dirname(os.path.abspath(__file__))
-CHART = os.path.join(HERE, '..', 'examples', 'turtlesim_demo.scxml')
+
+def has_turtlesim_msgs():
+    from ament_index_python.packages import get_package_share_directory, PackageNotFoundError
+    try:
+        get_package_share_directory('turtlesim_msgs')
+        return True
+    except PackageNotFoundError:
+        return False
+
+
+CHART = os.path.join(HERE, '..', 'examples', 'turtlesim_demo_msgs.scxml'
+                     if has_turtlesim_msgs() else 'turtlesim_demo.scxml')
 
 
 @pytest.mark.launch_test

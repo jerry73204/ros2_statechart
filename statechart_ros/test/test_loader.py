@@ -15,6 +15,8 @@
 
 """The loader: parsing, collecting ros: elements, expansion, structure (P1)."""
 
+import os
+
 from charts_util import chart_path, doc, spec_of
 from lxml import etree
 import pytest
@@ -261,3 +263,14 @@ def test_package_url_resolves_to_the_share_directory(tmp_path, monkeypatch):
     (tmp_path / 'charts' / 'x.scxml').write_text(doc('<state id="a"/>', model=False))
     spec = load_chart('package://some_pkg/charts/x.scxml')
     assert spec.path == str(tmp_path / 'charts' / 'x.scxml')
+
+
+def test_the_two_turtlesim_examples_differ_only_in_the_interface_package():
+    examples = os.path.join(os.path.dirname(chart_path('x')), '..', '..', 'examples')
+    with open(os.path.join(examples, 'turtlesim_demo.scxml')) as f:
+        old = f.read()
+    with open(os.path.join(examples, 'turtlesim_demo_msgs.scxml')) as f:
+        new = f.read()
+    new = new.replace('turtlesim_msgs/', 'turtlesim/').replace(
+        'Kilted and Rolling (interfaces in turtlesim_msgs). ', '')
+    assert new == old
