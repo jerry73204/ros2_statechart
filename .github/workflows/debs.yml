@@ -1,6 +1,7 @@
 name: Debian packages
 
-# A tag vX.Y.Z builds a Debian package of every package for Humble and Jazzy
+# A tag vX.Y.Z builds a Debian package of every package for Humble and Jazzy,
+# amd64 and arm64 (arm64 servers, Jetson on JetPack 7 with Jazzy)
 # (bloom-generate rosdebian, as the buildfarm does), installs them in a clean
 # ROS container, and attaches them to the GitHub release of the tag. Until the
 # packages are in the ROS apt repository (docs/RELEASE.md), this is the binary
@@ -22,14 +23,20 @@ permissions:
 
 jobs:
   debs:
-    name: ${{ matrix.distro }} Debian packages
-    runs-on: ubuntu-24.04
+    name: ${{ matrix.distro }} ${{ matrix.arch }} Debian packages
+    runs-on: ${{ matrix.runner }}
     container:
       image: ros:${{ matrix.distro }}-ros-base
     strategy:
       fail-fast: false
       matrix:
         distro: [humble, jazzy]
+        arch: [amd64, arm64]
+        include:
+          - arch: amd64
+            runner: ubuntu-24.04
+          - arch: arm64
+            runner: ubuntu-24.04-arm
     defaults:
       run:
         shell: bash
@@ -61,7 +68,7 @@ jobs:
         run: .github/scripts/smoke_debs.sh ${{ matrix.distro }}
       - uses: actions/upload-artifact@v7.0.2
         with:
-          name: debs-${{ matrix.distro }}
+          name: debs-${{ matrix.distro }}-${{ matrix.arch }}
           path: debs/*.deb
           if-no-files-found: error
 
@@ -80,8 +87,10 @@ jobs:
       - name: Create the release or add to it
         run: |
           tag=$TAG
-          if ! gh release view "$tag" > /dev/null 2>&1; then
-            gh release create "$tag" --verify-tag --title "$tag" --notes \
-              "Debian packages for Humble (Ubuntu 22.04) and Jazzy (Ubuntu 24.04), amd64. Install with \`sudo apt install ./ros-<distro>-*.deb\`; the changes are in each package's CHANGELOG.rst."
+          notes="Debian packages for Humble (Ubuntu 22.04) and Jazzy (Ubuntu 24.04), amd64 and arm64. Install with \`sudo apt install ./ros-<distro>-*_<arch>.deb\`; the changes are in each package's CHANGELOG.rst."
+          if gh release view "$tag" > /dev/null 2>&1; then
+            gh release edit "$tag" --notes "$notes"
+          else
+            gh release create "$tag" --verify-tag --title "$tag" --notes "$notes"
           fi
           gh release upload "$tag" debs/*/*.deb --clobber

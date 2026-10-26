@@ -49,7 +49,7 @@ The browser test (Playwright) and the nightly simulation (`nav2_bringup`,
 ## Debian packages on GitHub
 
 Pushing a tag `vX.Y.Z` runs `.github/workflows/debs.yml`: for Humble and
-Jazzy, in a stock `ros:<distro>-ros-base` container, it checks that the tag
+Jazzy, in a stock `ros:<distro>-ros-base` container on amd64 and on arm64 (GitHub's arm runners), it checks that the tag
 is the version in every `package.xml`, builds each package with
 `bloom-generate rosdebian` and `debian/rules binary` in dependency order
 (`.github/scripts/build_debs.sh`), installs them, runs a chart from the
