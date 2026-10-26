@@ -1,4 +1,0 @@
-# file: /usr/lib/python3/dist-packages/snowballstemmer/dutch_porter_stemmer.py
-# hypothesis_version: 6.151.5
-
-['I', 'Y', 'a', 'aa', 'baar', 'bar', 'c', 'dd', 'e', 'ee', 'en', 'end', 'ene', 'gem', 'heden', 'heid', 'i', 'ig', 'ing', 'j', 'kk', 'lijk', 'o', 'oo', 's', 'se', 'tt', 'u', 'uu', 'y', 'á', 'ä', 'è', 'é', 'ë', 'í', 'ï', 'ó', 'ö', 'ú', 'ü']

@@ -1,4 +1,0 @@
-# file: /usr/lib/python3/dist-packages/flake8/options/config.py
-# hypothesis_version: 6.151.5
-
-['.', '.flake8', 'UTF-8', 'count', 'extend-ignore', 'flake8', 'flake8:local-plugins', 'ignore', 'setup.cfg', 'store_false', 'store_true', 'tox.ini', '~']

@@ -1,4 +1,0 @@
-# file: /usr/lib/python3/dist-packages/flake8/main/application.py
-# hypothesis_version: 6.151.5
-
-['... stopped', 'Finished running', 'Reporting errors', 'files', 'seconds elapsed']

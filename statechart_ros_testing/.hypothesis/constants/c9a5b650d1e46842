@@ -1,4 +1,0 @@
-# file: /usr/lib/python3/dist-packages/flake8/checker.py
-# hypothesis_version: 6.151.5
-
-['E902', 'E999', 'Logical line: "%s"', 'Making checkers', 'files', 'logical lines', 'physical lines', 'processor', 'tokens']

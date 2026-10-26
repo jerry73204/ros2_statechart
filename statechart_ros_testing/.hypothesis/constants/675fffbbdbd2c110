@@ -1,4 +1,0 @@
-# file: /usr/lib/python3/dist-packages/snowballstemmer/danish_stemmer.py
-# hypothesis_version: 6.151.5
-
-['a', 'b', 'c', 'd', 'dt', 'e', 'elig', 'els', 'en', 'ende', 'endes', 'ene', 'enes', 'ens', 'er', 'ere', 'ered', 'erede', 'eren', 'erende', 'erendes', 'erens', 'erer', 'eres', 'eret', 'erets', 'erne', 'ernes', 'ers', 'es', 'et', 'ethed', 'ets', 'f', 'g', 'gd', 'gt', 'h', 'hed', 'heden', 'hedens', 'heder', 'heds', 'i', 'ig', 'j', 'k', 'kt', 'l', 'lig', 'løs', 'løst', 'm', 'n', 'o', 'p', 'q', 'r', 's', 'st', 't', 'u', 'v', 'w', 'x', 'y', 'z', 'å', 'æ', 'ø']

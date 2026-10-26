@@ -1,4 +1,0 @@
-# file: /usr/lib/python3/dist-packages/osrf_pycommon/process_utils/async_execute_process_asyncio/impl.py
-# hypothesis_version: 6.151.5
-
-['on_stderr_close', 'on_stderr_open', 'on_stderr_received', 'on_stdout_close', 'on_stdout_open', 'on_stdout_received', 'rb']

@@ -1,4 +1,0 @@
-# file: /usr/lib/python3/dist-packages/snowballstemmer/irish_stemmer.py
-# hypothesis_version: 6.151.5
-
-['a', 'abh', 'ach', 'acht', 'achta', 'achtúil', 'adh', 'aibh', 'aimh', 'aimid', 'ain', 'aire', 'airí', 'amh', 'arc', 'arcacht', 'arcachta', 'arcachtaí', 'aímid', 'aíocht', 'aíochta', 'b', "b'", 'bh', 'bhf', 'bp', 'c', 'ch', 'd', "d'", "d'fh", 'dh', 'dt', 'e', 'eabh', 'each', 'eacht', 'eachta', 'eachtúil', 'eadh', 'eamh', 'f', 'faidh', 'fh', 'fidh', 'g', 'gc', 'gh', 'gin', 'gineach', 'gineas', 'ginis', 'graf', 'grafaíoch', 'grafaíocht', 'grafaíochta', 'grafaíochtaí', 'h-', 'i', 'ibh', 'imh', 'imid', 'ire', 'irí', 'm', "m'", 'mb', 'mh', 'n-', 'nd', 'ng', 'o', 'p', 'paite', 'patach', 'patacha', 'pataigh', 'ph', 's', 'sh', 't', 't-', 'tar', 'tear', 'th', 'ts', 'u', 'á', 'áil', 'é', 'í', 'ímid', 'íocht', 'íochta', 'ó', 'óid', 'óideach', 'óideacha', 'óidigh', 'ú']

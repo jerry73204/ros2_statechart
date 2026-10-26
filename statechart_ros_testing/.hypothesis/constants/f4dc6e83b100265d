@@ -1,4 +1,0 @@
-# file: /usr/lib/python3/dist-packages/flake8/plugins/reporter.py
-# hypothesis_version: 6.151.5
-
-['default', 'quiet-filename', 'quiet-nothing']

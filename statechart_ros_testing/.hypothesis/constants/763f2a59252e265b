@@ -1,4 +1,0 @@
-# file: /ws/src/ros2_statechart/statechart_ros_testing/statechart_ros_testing/launch.py
-# hypothesis_version: 6.151.5
-
-[0.01, 0.05, 30.0, 100, '/', 'send_event', 'status']

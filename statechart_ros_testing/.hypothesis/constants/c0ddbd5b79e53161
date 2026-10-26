@@ -1,4 +1,0 @@
-# file: /usr/lib/python3/dist-packages/flake8/defaults.py
-# hypothesis_version: 6.151.5
-
-['*.egg', '.bzr', '.eggs', '.git', '.hg', '.nox', '.svn', '.tox', 'CVS', 'E121', 'E123', 'E126', 'E226', 'E24', 'E704', 'W503', 'W504', '__pycache__', 'logical lines', 'physical lines', 'tokens']

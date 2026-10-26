@@ -1,4 +1,0 @@
-# file: /usr/lib/python3/dist-packages/flake8/style_guide.py
-# hypothesis_version: 6.151.5
-
-['"%s" will be "%s"', 'StyleGuide', 'explicitly ignored', 'explicitly selected', 'ignored error', 'implicitly ignored', 'implicitly selected', 'selected error']

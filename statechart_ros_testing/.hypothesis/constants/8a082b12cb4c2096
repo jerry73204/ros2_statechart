@@ -1,4 +1,0 @@
-# file: /usr/lib/python3/dist-packages/flake8/main/options.py
-# hypothesis_version: 6.151.5
-
-['*.py', ',', '--append-config', '--benchmark', '--bug-report', '--color', '--config', '--count', '--disable-noqa', '--enable-extensions', '--exclude', '--exit-zero', '--extend-exclude', '--extend-ignore', '--extend-select', '--filename', '--format', '--hang-closing', '--ignore', '--indent-size', '--isolated', '--jobs', '--max-doc-length', '--max-line-length', '--no-show-source', '--output-file', '--per-file-ignores', '--quiet', '--require-plugins', '--select', '--show-source', '--statistics', '--stdin-display-name', '--tee', '--verbose', '-j', '-q', '-v', 'Count errors.', 'Negate --show-source', 'always', 'append', 'auto', 'count', 'default', 'errors', 'format', 'n', 'never', 'patterns', 'show_source', 'stdin', 'store_false', 'store_true']

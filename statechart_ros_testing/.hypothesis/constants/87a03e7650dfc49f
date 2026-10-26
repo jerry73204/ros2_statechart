@@ -1,4 +1,0 @@
-# file: /usr/lib/python3/dist-packages/flake8_import_order/__about__.py
-# hypothesis_version: 6.151.5
-
-['0.19.2', 'Alex Stapleton', 'LGPLv3', 'Phil Jones', '__author__', '__copyright__', '__email__', '__license__', '__maintainer__', '__maintainer_email__', '__summary__', '__title__', '__uri__', '__version__', 'alexs@prol.etari.at', 'flake8-import-order']

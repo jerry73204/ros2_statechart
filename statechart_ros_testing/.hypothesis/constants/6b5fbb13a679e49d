@@ -1,4 +1,0 @@
-# file: /usr/lib/python3/dist-packages/snowballstemmer/swedish_stemmer.py
-# hypothesis_version: 6.151.5
-
-['a', 'ad', 'ade', 'ades', 'alit', 'ande', 'anden', 'andes', 'andet', 'ar', 'are', 'aren', 'arens', 'arna', 'arnas', 'arne', 'as', 'ast', 'aste', 'at', 'b', 'c', 'cit', 'd', 'dd', 'dit', 'dt', 'e', 'els', 'en', 'ens', 'er', 'ern', 'erna', 'ernas', 'erns', 'es', 'et', 'f', 'fab', 'full', 'fullt', 'g', 'gd', 'gt', 'h', 'het', 'heten', 'hetens', 'heter', 'heterna', 'i', 'iet', 'ig', 'ilit', 'ivit', 'j', 'k', 'kom', 'kt', 'kvit', 'l', 'lig', 'm', 'mit', 'n', 'nit', 'nn', 'o', 'or', 'orna', 'ornas', 'p', 'pak', 'pit', 'r', 'rak', 'rit', 's', 'sit', 'stak', 't', 'tit', 'tt', 'u', 'uit', 'v', 'xit', 'y', 'ä', 'å', 'ö', 'ös', 'öst']

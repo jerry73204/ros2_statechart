@@ -1,4 +1,0 @@
-# file: /ws/src/ros2_statechart/statechart_ros_testing/statechart_ros_testing/properties.py
-# hypothesis_version: 6.151.5
-
-[0.1, 30.0, 'config', 'datamodel', 'invoke of', 'outputs', 'status', 'test']

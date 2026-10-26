@@ -1,4 +1,0 @@
-# file: /usr/lib/python3/dist-packages/flake8/formatting/_windows_color.py
-# hypothesis_version: 6.151.5
-
-['GetConsoleMode', 'GetStdHandle', 'SetConsoleMode', 'dwMode', 'hConsoleHandle', 'lpMode', 'nStdHandle', 'win32']

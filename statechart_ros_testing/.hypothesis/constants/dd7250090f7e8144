@@ -1,4 +1,0 @@
-# file: /usr/lib/python3/dist-packages/flake8_import_order/flake8_linter.py
-# hypothesis_version: 6.151.5
-
-[',', '-', '--import-order-style', 'comma_separated_list', 'import-order', 'normalize_paths', 'parse_from_config', 'store']

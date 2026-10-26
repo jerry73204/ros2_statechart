@@ -1,4 +1,0 @@
-# file: /usr/lib/python3/dist-packages/flake8/utils.py
-# hypothesis_version: 6.151.5
-
-['-', '.', '..', '[,\\s]', '[,\\t\\n\\r\\f\\v]', '[-_.]+', '[^\\s:,]+', '\\s*,\\s*', '\\s*:\\s*', '\\s+', 'code', 'colon', 'comma', 'eof', 'file', 'not ', 'path', 'unreachable', 'utf-8', 'whether', 'ws', '{} {} on {}']

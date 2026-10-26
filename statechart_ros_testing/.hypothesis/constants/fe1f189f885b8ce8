@@ -1,4 +1,0 @@
-# file: /usr/lib/python3/dist-packages/osrf_pycommon/terminal_color/__init__.py
-# hypothesis_version: 6.151.5
-
-['ansi', 'format_color', 'get_ansi_dict', 'print_color', 'sanitize', 'test_colors']

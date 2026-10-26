@@ -1,4 +1,0 @@
-# file: /usr/lib/python3/dist-packages/flake8_quotes/docstring_detection.py
-# hypothesis_version: 6.151.5
-
-['(', ')', ':', '[', ']', 'class', 'def', '{', '}']

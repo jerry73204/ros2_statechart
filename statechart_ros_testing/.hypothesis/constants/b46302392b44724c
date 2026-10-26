@@ -1,4 +1,0 @@
-# file: /usr/lib/python3/dist-packages/flake8_import_order/__init__.py
-# hypothesis_version: 6.151.5
-
-['ClassifiedImport', 'NewLine', 'TYPE_CHECKING', '__author__', '__copyright__', '__email__', '__future__', '__license__', '__main__', '__summary__', '__title__', '__uri__', '__version__', 'attr', 'cryptography', 'end_lineno', 'is_from', 'level', 'lineno', 'modules', 'names', 'package', 't', 'test', 'type', 'type_checking', 'typing']

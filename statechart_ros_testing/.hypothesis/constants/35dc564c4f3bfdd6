@@ -1,4 +1,0 @@
-# file: /usr/lib/python3/dist-packages/flake8_import_order/styles.py
-# hypothesis_version: 6.151.5
-
-[', ', '.', 'Error', 'I100', 'I101', 'I201', 'I202', 'I300', 'I666', '_', 'code', 'from {}{} import {}', 'import {}', 'lineno', 'message', 'select']
