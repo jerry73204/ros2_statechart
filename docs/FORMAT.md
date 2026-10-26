@@ -1,0 +1,223 @@
+# The `ros:` extension to SCXML, version 1
+
+A chart is a standard SCXML 1.0 document with `datamodel="python"` and
+elements from one extra namespace:
+
+```xml
+xmlns:ros="https://github.com/jerry73204/ros2_statechart/ns/1"
+```
+
+The extension says what a state does in ROS. Everything about states,
+transitions, nesting, parallel regions, history and guards stays standard
+SCXML.
+
+## 1. Rules
+
+1. **Placement.** `ros:` elements appear only as direct children of
+   `<scxml>` (declarations and inputs) or of `<state>`, `<parallel>`,
+   `<final>` (what that state does). Never inside `<onentry>`, `<onexit>`,
+   `<transition>` or other executable content. The W3C schema allows foreign
+   elements in all of these places; the engine accepts them only in the
+   first group ([ENGINE.md](ENGINE.md) E1, E2).
+2. **No ROS work on transitions.** Something to do when moving from A to B
+   belongs to B's entry (`ros:on_entry`) or to A's exit (`ros:on_exit`).
+3. **One invoke per state.** A state has at most one of `ros:action`,
+   `ros:service_call`, `ros:wait_for`, `ros:invoke`. Two concurrent pieces of
+   work are two regions of a `<parallel>`.
+4. **ROS work never transitions by itself.** It ends with an outcome; the
+   chart's transitions (written directly or as `ros:outcome`) decide what
+   follows (SCXML section 4.10).
+5. **Names are ROS names.** Topic, service and action names follow ROS rules:
+   relative names resolve in the node's namespace, `~/` in its private
+   namespace, and launch-time remapping applies. A chart never hard-codes a
+   robot's namespace.
+6. **Code by name only.** Guards, builders and handlers are names of methods
+   on the model object (`ros:model`). Expressions in the document stay in the
+   restricted datamodel: comparisons of datamodel values, `In(...)`, no
+   function calls.
+7. **Expansion.** The loader expands the extension into plain SCXML plus
+   listener callbacks before the engine sees the document. `ros2 statechart
+   export --plain` writes the expanded document, which any SCXML tool can
+   read.
+
+## 2. Declarations (children of `<scxml>`)
+
+### `ros:model`
+
+```xml
+<ros:model class="my_robot.mission:Mission"/>
+```
+
+The Python class providing guards and builders. Instantiated once by the node
+as `Mission(node)`; it may declare ROS parameters on the node and keep
+publishers or clients of its own. Exactly one per chart (child charts have
+their own).
+
+### `ros:param`
+
+```xml
+<datamodel><data id="max_retries" expr="3"/></datamodel>
+<ros:param name="max_retries"/>
+```
+
+Declares a ROS parameter of the node whose value initialises the datamodel
+variable of the same name; the `<data>` expression is the default. The
+validator requires the `<data>` element to exist.
+
+## 3. Inputs: ROS to events (children of `<scxml>`)
+
+| Element | Attributes | Event sent |
+|---|---|---|
+| `ros:subscribe` | `topic`, `type`, `event`, optional `when` (guard on the message), `data` (builder of event data), `qos` (`default`, `sensor`, `latched`) | `event` with `msg` (and builder data) for each message that passes `when` |
+| `ros:service_server` | `name`, `type`, optional `event` (fixed name, or `{field}` to take it from a request field), `reply` (builder) | the event, then the reply after the macrostep (below) |
+| `ros:action_server` | `name`, `type`, `event`, optional `accept` (guard), `feedback` (builder), `result_on` (event name), `result` (builder), `cancel_event` | `event` with `goal` when accepted; `cancel_event` on a cancel request |
+| `ros:timer` | `period` (s), `event` | `event` every period |
+
+**Service replies.** A request becomes an event; after the event is
+processed, the node replies with `handled` (whether a transition was taken),
+`refusal` (the reason, when a `ros:refuse` matched) and the active states.
+The package provides a generic `statechart_ros_msgs/srv/SendEvent`
+(event name and JSON data in, the three fields out); a user service type
+gets them through the `reply` builder.
+
+**Action servers.** A chart that accepts long tasks (a mission accepting
+jobs) declares one: the goal becomes an event, feedback is built from the
+chart's state on every change, and the result is sent when `result_on` occurs
+(typically `done.state.<task>`). The chart decides when a goal is refused
+(`accept`) and what a cancel means (`cancel_event`).
+
+## 4. What a state does (children of `<state>`, `<parallel>`, `<final>`)
+
+### Invokes: work owned by the state
+
+Started on entry, cancelled on exit, started again on re-entry.
+
+| Element | Attributes | Outcome statuses |
+|---|---|---|
+| `ros:action` | `server`, `type`, `goal` (builder), optional `feedback` (handler), `feedback_event`, `server_timeout` (s, default 5), `cancel_timeout` (s, default 5) | `succeeded`, `aborted`, `canceled` (by the server), `rejected`, `unavailable` |
+| `ros:service_call` | `service`, `type`, `request` (builder), optional `response` (handler), `timeout` | `succeeded`, `failed`, `timeout`, `unavailable` |
+| `ros:wait_for` | `topic`, `type`, optional `when` (guard), `timeout` | `succeeded`, `timeout` |
+| `ros:invoke` | `kind` (`package/name`, from an entry point), any attributes the kind declares | declared by the kind |
+
+**Builders and handlers.** The node calls them with what they need:
+
+```python
+class Mission:
+    def dock_goal(self, goal, datamodel):        # goal: an empty Goal message
+        goal.dock_id = datamodel.station
+        return goal
+    def dock_feedback(self, feedback, datamodel): # stored, or turned into an event
+        datamodel.dock_state = feedback.state
+```
+
+**Cancellation.** When the state is left, the node cancels the goal (or
+abandons the call) and waits up to `cancel_timeout` for the server to
+confirm before another goal is sent to the same server, so a new goal never
+races the cancel of the old one.
+
+### Outcomes
+
+```xml
+<state id="DOCKING">
+  <ros:action server="dock_robot" type="nav2_msgs/action/DockRobot" goal="dock_goal"/>
+  <ros:outcome status="succeeded" target="DOCKED"/>
+  <ros:outcome status="aborted" cond="retries_left" target="RETRY"/>
+  <ros:outcome status="aborted" target="FAILED"/>
+  <ros:outcome status="*" target="FAILED"/>
+</state>
+```
+
+`status` is one status, a space-separated list, or `*` for the rest. `cond`
+names an extra guard on the model. The result, error code and message are
+in the event data for guards and handlers (`result`, `error_code`,
+`error_msg`). Each outcome expands into:
+
+```xml
+<transition event="done.invoke.DOCKING" cond="_ros_outcome_DOCKING_1" target="DOCKED"/>
+```
+
+with a generated model callback that checks the status, so a chart never
+depends on how the engine wraps invoke data. The validator requires every
+status of the invoke kind to be covered.
+
+### Outputs: done once
+
+```xml
+<state id="DOCKED">
+  <ros:on_entry publish="dock/hold" type="std_msgs/msg/Bool" value="true"/>
+  <ros:on_exit  publish="dock/hold" type="std_msgs/msg/Bool" value="false"/>
+  <ros:on_entry call="led/set" type="my_interfaces/srv/SetColor" request="green_request"/>
+</state>
+```
+
+`ros:on_entry` and `ros:on_exit` take one of `publish` (with `value`, a
+literal, or `message`, a builder), `call` (a service, fire and forget, with
+`request`) or `set_param` (`node`, `name`, `value`). They run in document
+order, after the standard `<onentry>` and before the standard `<onexit>`
+respectively. Publishers to the same topic in several states share one
+publisher (latched if any of them says `qos="latched"`).
+
+### Refusals
+
+```xml
+<state id="MANUAL">
+  <ros:refuse event="start_job" reason="mode is MANUAL: switch to automatic first"/>
+</state>
+```
+
+Expands into a standard internal transition that handles the event without
+changing state and records the reason (an `<assign>` to a datamodel variable
+the loader declares), which the service or action reply returns.
+
+```xml
+<state id="OK">
+  <ros:ignore event="e_stop_released" reason="nothing to release"/>
+</state>
+```
+
+`ros:ignore` marks an event as deliberately without effect in that state, so
+the validator does not report it; unlike a refusal, the reply says
+`handled`. The validator treats refused and ignored events as handled; any
+other unhandled input event is an error, because a command that vanishes
+without an answer is a defect on a robot. Transition selection is standard
+SCXML (innermost state first), so a refusal in a child overrides a
+transition of its parent for the same event.
+
+## 5. Child charts
+
+```xml
+<state id="DOCK_PROCEDURE">
+  <ros:chart src="package://my_robot/charts/dock.scxml"/>
+  <ros:outcome status="succeeded" target="DOCKED"/>
+</state>
+```
+
+`ros:chart` runs another chart in the same node as the state's invoke: it
+starts on entry, is stopped (with all its invokes) on exit, and its final
+state's `donedata` is the outcome. `ros:action` on a `statechart_ros_msgs/action/RunStatechart`
+server runs a chart hosted by another node the same way.
+
+## 6. Validation (`ros2 statechart validate`)
+
+Errors stop the node from starting and fail CI:
+
+1. the document is well-formed SCXML 1.0 (W3C schema) and every `ros:`
+   element is in an allowed place with its required attributes;
+2. engine checks: no unreachable or trap states;
+3. every message, service and action type exists in the environment;
+4. every name used as guard, builder or handler exists on the model class;
+5. every invoke's statuses are covered by outcomes;
+6. every input event is handled or refused in every reachable configuration
+   of the region that receives it;
+7. no state has two invokes; no `ros:` element in executable content;
+8. `ros:param` names match `<data>` ids.
+
+## 7. Compatibility with other SCXML tools
+
+The extension follows SCXML's extension rules: its own namespace, and no
+transitions caused by extension content. The W3C schema accepts the
+elements in the places of rule 1. What other tools do with foreign elements
+is undefined by the standard (Appendix A.2); the measured behaviour of Qt
+SCXML, Apache Commons SCXML, scxmlgui and AS2FM is recorded in
+[phases/P0](phases/P0-foundations.md) and kept up to date here. For a tool
+that rejects them, use `export --plain`.
