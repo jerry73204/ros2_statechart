@@ -1,0 +1,11 @@
+# Send an event to a chart and get its answer after the event was processed.
+string event
+# Event data as a JSON object; empty for none.
+string data
+---
+# Whether a transition (other than a refusal) was taken.
+bool handled
+# The reason, when a ros:refuse matched.
+string refusal
+# The active configuration after the event.
+string[] configuration

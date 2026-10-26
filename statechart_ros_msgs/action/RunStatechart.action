@@ -1,0 +1,14 @@
+# Run a chart: the goal starts it, cancel stops it (exiting every state), the
+# result is its final state.
+
+# The chart: a path or package:// URL; empty for the chart the server hosts.
+string chart
+# Initial datamodel values as a JSON object.
+string data
+---
+# Id of the top-level final state reached; empty when the run was cancelled.
+string final_state
+# The final state's donedata as JSON.
+string donedata
+---
+StatechartStatus status
