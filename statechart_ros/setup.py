@@ -20,12 +20,14 @@ setup(
     name=package_name,
     version='0.1.0',
     packages=find_packages(exclude=['test']),
+    package_data={package_name: ['schema/*.xsd', 'schema/*.md', 'schema/w3c/*.xsd',
+                                 'schema/w3c/*.md']},
     data_files=[
         ('share/ament_index/resource_index/packages', ['resource/' + package_name]),
         ('share/' + package_name, ['package.xml']),
     ],
     install_requires=['setuptools'],
-    zip_safe=True,
+    zip_safe=False,
     maintainer='jerry73204',
     maintainer_email='jerry73204@gmail.com',
     description=(

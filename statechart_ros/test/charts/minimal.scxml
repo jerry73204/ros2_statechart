@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<scxml xmlns="http://www.w3.org/2005/07/scxml"
+       xmlns:ros="https://github.com/jerry73204/ros2_statechart/ns/1"
+       version="1.0" datamodel="python" initial="IDLE">
+  <ros:model class="turtle_demo.model:Model"/>
+  <ros:service_server name="~/command" type="statechart_ros_msgs/srv/SendEvent"/>
+  <state id="IDLE">
+    <transition event="go" target="MOVING"/>
+  </state>
+  <state id="MOVING">
+    <ros:on_entry publish="turtle1/cmd_vel" type="geometry_msgs/msg/Twist" message="forward"/>
+    <ros:wait_for topic="turtle1/pose" type="turtlesim/msg/Pose" when="far_enough" timeout="10"/>
+    <ros:outcome status="succeeded" target="IDLE"/>
+    <ros:outcome status="timeout" target="IDLE"/>
+  </state>
+</scxml>

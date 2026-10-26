@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- Copyright 2026 The ros2_statechart Authors. SPDX-License-Identifier: Apache-2.0 -->
+<!-- SCXML 1.0 with the ros: extension: point an editor or xmllint at this file. -->
+<xsd:schema xmlns:xsd="http://www.w3.org/2001/XMLSchema">
+  <xsd:import namespace="http://www.w3.org/2005/07/scxml" schemaLocation="w3c/scxml.xsd"/>
+  <xsd:import namespace="https://github.com/jerry73204/ros2_statechart/ns/1"
+              schemaLocation="ros_statechart.xsd"/>
+</xsd:schema>

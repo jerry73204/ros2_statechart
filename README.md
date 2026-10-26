@@ -7,7 +7,7 @@ publishes on entry, which topics and services turn into events. The chart is
 run by [python-statemachine](https://github.com/fgmacedo/python-statemachine),
 used as released, inside one ROS 2 node.
 
-Status: design. Nothing is implemented yet; see [docs/phases](docs/phases/).
+Status: in development. Done: P0 (engine pinned by tests), P1 (loader, validator, `validate` / `diagram` / `export`); see [docs/phases](docs/phases/).
 
 ## Why statecharts
 
@@ -38,20 +38,39 @@ SCXML) add what keeps a large machine readable and correct:
 
   <parallel id="run">
     <state id="safety" initial="OK">
-      <state id="OK"><transition event="e_stop" target="STOPPED"/></state>
-      <state id="STOPPED"><transition event="resume" target="OK"/></state>
+      <state id="OK">
+        <transition event="e_stop" target="STOPPED"/>
+        <ros:ignore event="resume" reason="not stopped"/>
+      </state>
+      <state id="STOPPED">
+        <transition event="resume" target="OK"/>
+        <ros:ignore event="e_stop" reason="already stopped"/>
+      </state>
     </state>
     <state id="task" initial="IDLE">
-      <state id="IDLE"><transition event="go" cond="In('OK')" target="DOCKING"/></state>
+      <ros:refuse event="go" reason="a docking task is running or done"/>
+      <ros:refuse event="undock" reason="not docked"/>
+      <state id="IDLE">
+        <transition event="go" cond="In('OK')" target="DOCKING"/>
+        <ros:refuse event="go" reason="stopped: send resume first"/>
+      </state>
       <state id="DOCKING">
         <ros:action server="dock_robot" type="nav2_msgs/action/DockRobot" goal="dock_goal"/>
         <ros:outcome status="succeeded" target="DOCKED"/>
-        <ros:outcome status="aborted" target="IDLE"/>
+        <ros:outcome status="*" target="IDLE"/>
         <transition event="e_stop" target="IDLE"/>  <!-- leaving DOCKING cancels the goal -->
       </state>
       <state id="DOCKED">
         <ros:on_entry publish="dock/hold" type="std_msgs/msg/Bool" value="true"/>
         <ros:on_exit publish="dock/hold" type="std_msgs/msg/Bool" value="false"/>
+        <transition event="undock" cond="In('OK')" target="UNDOCKING"/>
+        <ros:refuse event="undock" reason="stopped: send resume first"/>
+      </state>
+      <state id="UNDOCKING">
+        <ros:action server="undock_robot" type="nav2_msgs/action/UndockRobot" goal="undock_goal"/>
+        <ros:outcome status="succeeded" target="IDLE"/>
+        <ros:outcome status="*" target="DOCKED"/>
+        <transition event="e_stop" target="DOCKED"/>
       </state>
     </state>
   </parallel>
@@ -61,8 +80,10 @@ SCXML) add what keeps a large machine readable and correct:
 ```python
 # my_robot/mission.py: the only code; guards and goal builders by name
 class Mission:
+    def __init__(self, node): self.node = node
     def msg_true(self, msg): return msg.data
     def dock_goal(self, goal): goal.dock_id = 'home'; goal.navigate_to_staging_pose = True; return goal
+    def undock_goal(self, goal): goal.dock_type = 'simple_charging_dock'; return goal
 ```
 
 ```bash

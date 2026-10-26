@@ -34,5 +34,14 @@ setup(
     ),
     license='Apache-2.0',
     tests_require=['pytest'],
-    entry_points={},
+    entry_points={
+        'ros2cli.command': [
+            'statechart = statechart_ros_cli.command.statechart:StatechartCommand',
+        ],
+        'statechart_ros_cli.verb': [
+            'validate = statechart_ros_cli.verb.validate:ValidateVerb',
+            'diagram = statechart_ros_cli.verb.diagram:DiagramVerb',
+            'export = statechart_ros_cli.verb.export:ExportVerb',
+        ],
+    },
 )

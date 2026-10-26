@@ -1,0 +1,166 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- Copyright 2026 The ros2_statechart Authors. SPDX-License-Identifier: Apache-2.0 -->
+<!-- The ros: extension to SCXML, version 1 (docs/FORMAT.md). Used together with the
+     W3C SCXML schema, whose extension points (processContents="lax") validate these
+     elements wherever they appear; placement is checked by the validator. -->
+<xsd:schema xmlns:xsd="http://www.w3.org/2001/XMLSchema"
+            targetNamespace="https://github.com/jerry73204/ros2_statechart/ns/1"
+            xmlns="https://github.com/jerry73204/ros2_statechart/ns/1"
+            elementFormDefault="qualified">
+  <xsd:element name="model">
+    <xsd:annotation><xsd:documentation>The Python class providing guards and builders: package.module:Class.</xsd:documentation></xsd:annotation>
+    <xsd:complexType>
+      <xsd:attribute name="class" type="xsd:string" use="required"/>
+    </xsd:complexType>
+  </xsd:element>
+  <xsd:element name="param">
+    <xsd:annotation><xsd:documentation>A ROS parameter initialising the datamodel value of the same name.</xsd:documentation></xsd:annotation>
+    <xsd:complexType>
+      <xsd:attribute name="name" type="xsd:string" use="required"/>
+    </xsd:complexType>
+  </xsd:element>
+  <xsd:element name="subscribe">
+    <xsd:annotation><xsd:documentation>Each message on a topic (that passes when) becomes an event.</xsd:documentation></xsd:annotation>
+    <xsd:complexType>
+      <xsd:attribute name="topic" type="xsd:string" use="required"/>
+      <xsd:attribute name="type" type="xsd:string" use="required"/>
+      <xsd:attribute name="event" type="xsd:string" use="required"/>
+      <xsd:attribute name="when" type="xsd:string" use="optional"/>
+      <xsd:attribute name="data" type="xsd:string" use="optional"/>
+      <xsd:attribute name="qos" type="xsd:string" use="optional"/>
+    </xsd:complexType>
+  </xsd:element>
+  <xsd:element name="service_server">
+    <xsd:annotation><xsd:documentation>Each request becomes an event; the reply is sent after the macrostep.</xsd:documentation></xsd:annotation>
+    <xsd:complexType>
+      <xsd:attribute name="name" type="xsd:string" use="required"/>
+      <xsd:attribute name="type" type="xsd:string" use="required"/>
+      <xsd:attribute name="event" type="xsd:string" use="optional"/>
+      <xsd:attribute name="reply" type="xsd:string" use="optional"/>
+    </xsd:complexType>
+  </xsd:element>
+  <xsd:element name="action_server">
+    <xsd:annotation><xsd:documentation>The chart accepts goals of an action.</xsd:documentation></xsd:annotation>
+    <xsd:complexType>
+      <xsd:attribute name="name" type="xsd:string" use="required"/>
+      <xsd:attribute name="type" type="xsd:string" use="required"/>
+      <xsd:attribute name="event" type="xsd:string" use="required"/>
+      <xsd:attribute name="accept" type="xsd:string" use="optional"/>
+      <xsd:attribute name="feedback" type="xsd:string" use="optional"/>
+      <xsd:attribute name="result_on" type="xsd:string" use="optional"/>
+      <xsd:attribute name="result" type="xsd:string" use="optional"/>
+      <xsd:attribute name="cancel_event" type="xsd:string" use="optional"/>
+    </xsd:complexType>
+  </xsd:element>
+  <xsd:element name="timer">
+    <xsd:annotation><xsd:documentation>An event every period seconds.</xsd:documentation></xsd:annotation>
+    <xsd:complexType>
+      <xsd:attribute name="period" type="xsd:string" use="required"/>
+      <xsd:attribute name="event" type="xsd:string" use="required"/>
+    </xsd:complexType>
+  </xsd:element>
+  <xsd:element name="action">
+    <xsd:annotation><xsd:documentation>Invoke: send a goal on entry, cancel it on exit.</xsd:documentation></xsd:annotation>
+    <xsd:complexType>
+      <xsd:attribute name="server" type="xsd:string" use="required"/>
+      <xsd:attribute name="type" type="xsd:string" use="required"/>
+      <xsd:attribute name="goal" type="xsd:string" use="optional"/>
+      <xsd:attribute name="feedback" type="xsd:string" use="optional"/>
+      <xsd:attribute name="feedback_event" type="xsd:string" use="optional"/>
+      <xsd:attribute name="server_timeout" type="xsd:string" use="optional"/>
+      <xsd:attribute name="cancel_timeout" type="xsd:string" use="optional"/>
+    </xsd:complexType>
+  </xsd:element>
+  <xsd:element name="service_call">
+    <xsd:annotation><xsd:documentation>Invoke: call a service on entry.</xsd:documentation></xsd:annotation>
+    <xsd:complexType>
+      <xsd:attribute name="service" type="xsd:string" use="required"/>
+      <xsd:attribute name="type" type="xsd:string" use="required"/>
+      <xsd:attribute name="request" type="xsd:string" use="optional"/>
+      <xsd:attribute name="response" type="xsd:string" use="optional"/>
+      <xsd:attribute name="success" type="xsd:string" use="optional"/>
+      <xsd:attribute name="timeout" type="xsd:string" use="optional"/>
+      <xsd:attribute name="server_timeout" type="xsd:string" use="optional"/>
+    </xsd:complexType>
+  </xsd:element>
+  <xsd:element name="wait_for">
+    <xsd:annotation><xsd:documentation>Invoke: wait for a message.</xsd:documentation></xsd:annotation>
+    <xsd:complexType>
+      <xsd:attribute name="topic" type="xsd:string" use="required"/>
+      <xsd:attribute name="type" type="xsd:string" use="required"/>
+      <xsd:attribute name="when" type="xsd:string" use="optional"/>
+      <xsd:attribute name="timeout" type="xsd:string" use="optional"/>
+      <xsd:attribute name="qos" type="xsd:string" use="optional"/>
+    </xsd:complexType>
+  </xsd:element>
+  <xsd:element name="chart">
+    <xsd:annotation><xsd:documentation>Invoke: run a child chart in the same node.</xsd:documentation></xsd:annotation>
+    <xsd:complexType>
+      <xsd:attribute name="src" type="xsd:string" use="required"/>
+    </xsd:complexType>
+  </xsd:element>
+  <xsd:element name="outcome">
+    <xsd:annotation><xsd:documentation>A transition taken when the state's invoke ends with one of the statuses.</xsd:documentation></xsd:annotation>
+    <xsd:complexType>
+      <xsd:attribute name="status" type="xsd:string" use="required"/>
+      <xsd:attribute name="target" type="xsd:string" use="required"/>
+      <xsd:attribute name="cond" type="xsd:string" use="optional"/>
+    </xsd:complexType>
+  </xsd:element>
+  <xsd:element name="on_entry">
+    <xsd:annotation><xsd:documentation>Done once when the state is entered.</xsd:documentation></xsd:annotation>
+    <xsd:complexType>
+      <xsd:attribute name="publish" type="xsd:string" use="optional"/>
+      <xsd:attribute name="call" type="xsd:string" use="optional"/>
+      <xsd:attribute name="set_param" type="xsd:string" use="optional"/>
+      <xsd:attribute name="type" type="xsd:string" use="optional"/>
+      <xsd:attribute name="value" type="xsd:string" use="optional"/>
+      <xsd:attribute name="message" type="xsd:string" use="optional"/>
+      <xsd:attribute name="request" type="xsd:string" use="optional"/>
+      <xsd:attribute name="node" type="xsd:string" use="optional"/>
+      <xsd:attribute name="qos" type="xsd:string" use="optional"/>
+    </xsd:complexType>
+  </xsd:element>
+  <xsd:element name="on_exit">
+    <xsd:annotation><xsd:documentation>Done once when the state is left.</xsd:documentation></xsd:annotation>
+    <xsd:complexType>
+      <xsd:attribute name="publish" type="xsd:string" use="optional"/>
+      <xsd:attribute name="call" type="xsd:string" use="optional"/>
+      <xsd:attribute name="set_param" type="xsd:string" use="optional"/>
+      <xsd:attribute name="type" type="xsd:string" use="optional"/>
+      <xsd:attribute name="value" type="xsd:string" use="optional"/>
+      <xsd:attribute name="message" type="xsd:string" use="optional"/>
+      <xsd:attribute name="request" type="xsd:string" use="optional"/>
+      <xsd:attribute name="node" type="xsd:string" use="optional"/>
+      <xsd:attribute name="qos" type="xsd:string" use="optional"/>
+    </xsd:complexType>
+  </xsd:element>
+  <xsd:element name="refuse">
+    <xsd:annotation><xsd:documentation>The event is refused in this state, with a reason.</xsd:documentation></xsd:annotation>
+    <xsd:complexType>
+      <xsd:attribute name="event" type="xsd:string" use="required"/>
+      <xsd:attribute name="reason" type="xsd:string" use="required"/>
+    </xsd:complexType>
+  </xsd:element>
+  <xsd:element name="ignore">
+    <xsd:annotation><xsd:documentation>The event deliberately has no effect in this state.</xsd:documentation></xsd:annotation>
+    <xsd:complexType>
+      <xsd:attribute name="event" type="xsd:string" use="required"/>
+      <xsd:attribute name="reason" type="xsd:string" use="optional"/>
+    </xsd:complexType>
+  </xsd:element>
+  <xsd:element name="after">
+    <xsd:annotation><xsd:documentation>An event delay seconds after entry, unless the state is left.</xsd:documentation></xsd:annotation>
+    <xsd:complexType>
+      <xsd:attribute name="delay" type="xsd:string" use="required"/>
+      <xsd:attribute name="event" type="xsd:string" use="required"/>
+    </xsd:complexType>
+  </xsd:element>
+  <xsd:element name="invoke">
+    <xsd:annotation><xsd:documentation>Invoke of a kind registered in the entry point group statechart_ros.invokes; the kind declares the other attributes.</xsd:documentation></xsd:annotation>
+    <xsd:complexType>
+      <xsd:attribute name="kind" type="xsd:string" use="required"/>
+      <xsd:anyAttribute processContents="skip"/>
+    </xsd:complexType>
+  </xsd:element>
+</xsd:schema>

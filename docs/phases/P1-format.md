@@ -9,8 +9,9 @@ starting ROS.
 ## Delivers
 
 - `statechart_ros.loader`:
-  - parse with ElementTree (DTDs refused), collect `ros:` elements with
-    their positions, reject misplaced ones;
+  - parse with lxml (DTDs and entities refused; lxml for line numbers and
+    XML Schema validation), collect `ros:` elements with their positions,
+    reject misplaced ones;
   - expand sugar into standard SCXML: `ros:outcome` into `done.invoke`
     transitions with generated conditions, `ros:refuse` and `ros:ignore`
     into internal transitions with an `<assign>`;

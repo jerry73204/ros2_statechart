@@ -10,6 +10,10 @@
   <url type="bugtracker">https://github.com/jerry73204/ros2_statechart/issues</url>
 
   <exec_depend>python_statemachine_vendor</exec_depend>
+  <exec_depend>python3-lxml</exec_depend>
+  <exec_depend>ament_index_python</exec_depend>
+  <exec_depend>rosidl_runtime_py</exec_depend>
+  <exec_depend>statechart_ros_msgs</exec_depend>
 
   <test_depend>ament_copyright</test_depend>
   <test_depend>ament_flake8</test_depend>

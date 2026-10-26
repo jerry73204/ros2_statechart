@@ -50,8 +50,8 @@ SCXML.
 
 The Python class providing guards and builders. Instantiated once by the node
 as `Mission(node)`; it may declare ROS parameters on the node and keep
-publishers or clients of its own. Exactly one per chart (child charts have
-their own).
+publishers or clients of its own. At most one per chart (child charts have
+their own); a chart without guards, builders or handlers needs none.
 
 ### `ros:param`
 
@@ -95,7 +95,7 @@ Started on entry, cancelled on exit, started again on re-entry.
 | Element | Attributes | Outcome statuses |
 |---|---|---|
 | `ros:action` | `server`, `type`, `goal` (builder), optional `feedback` (handler), `feedback_event`, `server_timeout` (s, default 5), `cancel_timeout` (s, default 5) | `succeeded`, `aborted`, `canceled` (by the server), `rejected`, `unavailable` |
-| `ros:service_call` | `service`, `type`, `request` (builder), optional `response` (handler), `timeout` | `succeeded`, `failed`, `timeout`, `unavailable` |
+| `ros:service_call` | `service`, `type`, `request` (builder), optional `response` (handler), `success` (guard on the response; without it every response succeeds), `timeout` (s, default 10), `server_timeout` (s, default 5) | `succeeded`, `failed`, `timeout`, `unavailable` |
 | `ros:wait_for` | `topic`, `type`, optional `when` (guard), `timeout` | `succeeded`, `timeout` |
 | `ros:invoke` | `kind` (`package/name`, from an entry point), any attributes the kind declares | declared by the kind |
 
@@ -154,7 +154,10 @@ status of the invoke kind to be covered.
 
 `ros:on_entry` and `ros:on_exit` take one of `publish` (with `value`, a
 literal, or `message`, a builder), `call` (a service, fire and forget, with
-`request`) or `set_param` (`node`, `name`, `value`). They run in document
+`request`) or `set_param` (the parameter name, with `value` and optional
+`node`, the node whose parameter is set; default this node). A `value` is
+read as YAML: a mapping sets the message's fields by name, anything else is
+assigned to the field `data` (as in `std_msgs`). They run in document
 order, after the standard `<onentry>` and before the standard `<onexit>`
 respectively. Publishers to the same topic in several states share one
 publisher (latched if any of them says `qos="latched"`).
@@ -220,14 +223,30 @@ server runs a chart hosted by another node the same way.
 
 Errors stop the node from starting and fail CI:
 
-1. the document is well-formed SCXML 1.0 (W3C schema) and every `ros:`
-   element is in an allowed place with its required attributes;
-2. engine checks: no unreachable or trap states;
+1. the document is well-formed SCXML 1.0 (W3C schema, plus the schema of
+   this namespace, `statechart_ros/schema/scxml_ros.xsd`, which editors can
+   use too) and every `ros:` element is known, in an allowed place, with its
+   required attributes and values that fit their roles (numbers, types,
+   QoS names);
+2. engine checks: the engine loads the document; no state is unreachable
+   from the initial configuration (the engine's own graph walk); no trap
+   state, that is an atomic state that is not `<final>` and neither it nor
+   any ancestor has a transition (outcomes and refusals included);
 3. every message, service and action type exists in the environment;
 4. every name used as guard, builder or handler exists on the model class;
 5. every invoke's statuses are covered by outcomes;
-6. every input event is handled or refused in every reachable configuration
-   of the region that receives it;
+6. every input event is handled, refused or ignored in every configuration:
+   some active state or one of its ancestors has a transition whose event
+   descriptor matches it (guards are not evaluated; a guarded transition
+   counts, and at run time an unhandled event is reported). Configurations
+   are the structural ones (every combination the nesting allows, which
+   includes the reachable ones); past 20000 the rule is skipped with a
+   warning. Input events are those of `ros:subscribe`, `ros:timer`,
+   `ros:action_server` (`event`, `cancel_event`) and fixed `event`s of
+   `ros:service_server`; a service server without a fixed event (such as
+   `SendEvent`) adds the chart's command events: every event a transition
+   names except `done.*`, `error.*`, events the chart sends or raises,
+   `ros:after` and feedback events, and other inputs' events;
 7. no state has two invokes; no `ros:` element in executable content;
 8. `ros:param` names match `<data>` ids;
 9. no `<send>` with `delay` or `delayexpr` (use `ros:after`); no `<data>` id

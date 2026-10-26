@@ -1,0 +1,47 @@
+<scxml xmlns="http://www.w3.org/2005/07/scxml"
+       xmlns:ros="https://github.com/jerry73204/ros2_statechart/ns/1"
+       version="1.0" datamodel="python" initial="run">
+
+  <ros:model class="my_robot.mission:Mission"/>
+  <ros:subscribe topic="e_stop" type="std_msgs/msg/Bool" event="e_stop" when="msg_true"/>
+  <ros:service_server name="~/command" type="statechart_ros_msgs/srv/SendEvent"/>
+
+  <parallel id="run">
+    <state id="safety" initial="OK">
+      <state id="OK">
+        <transition event="e_stop" target="STOPPED"/>
+        <ros:ignore event="resume" reason="not stopped"/>
+      </state>
+      <state id="STOPPED">
+        <transition event="resume" target="OK"/>
+        <ros:ignore event="e_stop" reason="already stopped"/>
+      </state>
+    </state>
+    <state id="task" initial="IDLE">
+      <ros:refuse event="go" reason="a docking task is running or done"/>
+      <ros:refuse event="undock" reason="not docked"/>
+      <state id="IDLE">
+        <transition event="go" cond="In('OK')" target="DOCKING"/>
+        <ros:refuse event="go" reason="stopped: send resume first"/>
+      </state>
+      <state id="DOCKING">
+        <ros:action server="dock_robot" type="nav2_msgs/action/DockRobot" goal="dock_goal"/>
+        <ros:outcome status="succeeded" target="DOCKED"/>
+        <ros:outcome status="*" target="IDLE"/>
+        <transition event="e_stop" target="IDLE"/>  <!-- leaving DOCKING cancels the goal -->
+      </state>
+      <state id="DOCKED">
+        <ros:on_entry publish="dock/hold" type="std_msgs/msg/Bool" value="true"/>
+        <ros:on_exit publish="dock/hold" type="std_msgs/msg/Bool" value="false"/>
+        <transition event="undock" cond="In('OK')" target="UNDOCKING"/>
+        <ros:refuse event="undock" reason="stopped: send resume first"/>
+      </state>
+      <state id="UNDOCKING">
+        <ros:action server="undock_robot" type="nav2_msgs/action/UndockRobot" goal="undock_goal"/>
+        <ros:outcome status="succeeded" target="IDLE"/>
+        <ros:outcome status="*" target="DOCKED"/>
+        <transition event="e_stop" target="DOCKED"/>
+      </state>
+    </state>
+  </parallel>
+</scxml>
