@@ -610,8 +610,12 @@ class ChartRunner:
             error = exc
         if not ctx.cancelled.is_set():
             self.queue.put(('outcome', (sid, token, outcome, error), None))
+        self._invoke_settled(ctx)
         ctx.cancelled.wait()
         return None
+
+    def _invoke_settled(self, ctx):
+        """Note that an invocation's outcome is queued (a hook for the test kit)."""
 
 
 _ENGINE_KWARGS = frozenset({'event_data', 'machine', 'model', 'state', 'source', 'target',

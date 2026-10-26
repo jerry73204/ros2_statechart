@@ -41,3 +41,7 @@ def spin(executor, timeout_sec=0.1):
             return
         except InvalidHandle:
             continue
+        except Exception:  # noqa: B902 - errors from a context shut down meanwhile
+            if not executor.context.ok():
+                return
+            raise

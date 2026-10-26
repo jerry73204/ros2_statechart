@@ -1,0 +1,89 @@
+# The patrol example (statechart_ros_nav2/examples/patrol.scxml), without ROS.
+chart: ../../../statechart_ros_nav2/examples/patrol.scxml
+params: {battery_low: 0.3, battery_full: 0.9}
+outcomes:
+  WAIT_NAV2: succeeded
+steps:
+  - expect: [IDLE, AUTO, CLEAR, POWER_OK]
+  - send: cancel
+    refused: no task
+  - send: start
+    handled: true
+    expect: [WORK, PATROL, TO_A]
+
+  # Patrol: each leg's outcome moves to the next; a lap counts on leaving TO_C.
+  - complete: TO_A
+    expect: [TO_B]
+  - complete: TO_B
+    status: aborted
+    expect: [TO_C]
+  - complete: TO_C
+    expect: [TO_A]
+    datamodel: {laps: 1}
+  - send: start
+    refused: a patrol is running
+
+  # Low battery: the leg is left (its goal cancelled) and the robot docks.
+  - send: battery
+    data: {percentage: 0.5}
+    expect: [POWER_OK, TO_A]
+  - send: battery
+    data: {percentage: 0.2}
+    expect: [POWER_LOW, CHARGE, DOCKING]
+    expect_not: [TO_A]
+  - complete: DOCKING
+    expect: [CHARGING]
+    outputs: [[publish, charging, true]]
+  - send: battery
+    data: {percentage: 0.6}
+    expect: [CHARGING]
+  - send: battery
+    data: {percentage: 0.95}
+    expect: [POWER_OK, UNDOCKING]
+    outputs: [[publish, charging, false]]
+  - complete: UNDOCKING
+    expect: [PATROL, TO_A]
+
+  # A failed dock retries after five seconds.
+  - send: battery
+    data: {percentage: 0.1}
+    expect: [DOCKING]
+  - complete: DOCKING
+    status: aborted
+    expect: [DOCK_FAILED]
+  - advance: 4.9
+    expect: [DOCK_FAILED]
+  - advance: 0.2
+    expect: [DOCKING]
+  - complete: DOCKING
+    expect: [CHARGING]
+  - send: battery
+    data: {percentage: 1.0}
+    expect: [UNDOCKING]
+  - complete: UNDOCKING
+    expect: [TO_A]
+
+  # Pause during navigation; resume returns to the same leg.
+  - complete: TO_A
+    expect: [TO_B]
+  - send: pause
+    expect: [PAUSED, HOLD]
+    expect_not: [TO_B]
+  - send: start
+    refused: "paused or stopped: resume first"
+  - send: resume
+    expect: [AUTO, WORK, TO_B]
+
+  # Emergency stop holds the task the same way.
+  - send: e_stop
+    expect: [STOPPED, HOLD]
+  - send: resume
+    expect: [HOLD]
+  - send: e_stop_released
+    expect: [CLEAR, TO_B]
+
+  # Cancel ends the task.
+  - send: cancel
+    handled: true
+    expect: [IDLE]
+    expect_not: [WORK]

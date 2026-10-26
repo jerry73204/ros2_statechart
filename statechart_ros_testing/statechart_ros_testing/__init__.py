@@ -12,4 +12,11 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-"""Test kit for statecharts: fakes, scenarios, property tests."""
+
+"""Test kit for statecharts: fakes, scenarios, property tests, launch_testing helpers."""
+
+from statechart_ros_testing.chart_test import (chart_under_test, ChartTest, ChartTestError,
+                                               PENDING)
+from statechart_ros_testing.scenario import run_scenario
+
+__all__ = ['chart_under_test', 'ChartTest', 'ChartTestError', 'PENDING', 'run_scenario']
