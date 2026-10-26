@@ -56,7 +56,7 @@ def post(setup, path, body):
 def test_charts_are_discovered(setup):
     # Only /demo: other tests' chart nodes may share the ROS domain.
     charts = wait_for(lambda: [c for c in get_json(setup, '/api/charts')
-                               if c['name'] and c['node'] == '/demo'])
+                               if c['name'] and c['node'] == '/demo' and c['running']])
     assert charts == [{'node': '/demo', 'name': 'demo', 'source': charts[0]['source'],
                        'debug_events': True, 'running': True}]
 
