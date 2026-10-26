@@ -46,6 +46,15 @@ def test_readme_chart_is_in_step_with_the_readme():
         assert f.read() == block
 
 
+def has_docking():
+    try:
+        from nav2_msgs.action import DockRobot  # noqa: F401
+    except ImportError:
+        return False
+    return True
+
+
+@pytest.mark.skipif(not has_docking(), reason='the README example docks (Nav2 Jazzy on)')
 def test_validate_passes_the_readme_example():
     result = ros2('validate', README, '--model-path', FIXTURES)
     assert result.returncode == 0, result.stdout + result.stderr

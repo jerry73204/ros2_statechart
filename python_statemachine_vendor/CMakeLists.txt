@@ -2,7 +2,6 @@ cmake_minimum_required(VERSION 3.14)
 project(python_statemachine_vendor NONE)
 
 find_package(ament_cmake REQUIRED)
-find_package(ament_cmake_python REQUIRED)
 
 # python-statemachine, used as released. Raise the version only together with
 # the engine tests in statechart_ros/test/engine passing (docs/ENGINE.md).
@@ -36,7 +35,13 @@ set(_unpacked "${CMAKE_CURRENT_BINARY_DIR}/wheel")
 file(REMOVE_RECURSE "${_unpacked}")
 file(ARCHIVE_EXTRACT INPUT "${_wheel}" DESTINATION "${_unpacked}")
 
-ament_get_python_install_dir(_python_install_dir)
+# Install where ament_python packages go (lib/pythonX.Y/site-packages), which
+# colcon and the ROS install space put on PYTHONPATH. Humble's
+# ament_get_python_install_dir gives the Debian layout (local/lib/.../
+# dist-packages) instead, which a workspace does not put on PYTHONPATH.
+find_package(Python3 REQUIRED COMPONENTS Interpreter)
+set(_python_install_dir
+  "lib/python${Python3_VERSION_MAJOR}.${Python3_VERSION_MINOR}/site-packages")
 install(DIRECTORY "${_unpacked}/statemachine"
   DESTINATION "${_python_install_dir}"
   PATTERN "__pycache__" EXCLUDE)

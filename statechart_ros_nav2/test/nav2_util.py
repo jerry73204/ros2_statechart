@@ -20,6 +20,7 @@ import time
 
 from action_msgs.msg import GoalStatus  # noqa: F401 - re-exported for tests
 from nav2_msgs import action as nav2
+import pytest
 import rclpy
 from rclpy.action import ActionServer, CancelResponse, GoalResponse
 from rclpy.callback_groups import ReentrantCallbackGroup
@@ -28,16 +29,20 @@ from rclpy.lifecycle import TransitionCallbackReturn
 from rclpy.node import Node
 from rclpy.parameter import Parameter
 from statechart_ros.node import StatechartNode
+from statechart_ros.spin import spin
 from statechart_ros_msgs.srv import SendEvent
 from std_srvs.srv import Trigger
 
 ROS_NS = 'https://github.com/jerry73204/ros2_statechart/ns/1'
-SERVERS = {
-    'navigate_to_pose': nav2.NavigateToPose, 'navigate_through_poses': nav2.NavigateThroughPoses,
-    'follow_waypoints': nav2.FollowWaypoints, 'dock_robot': nav2.DockRobot,
-    'undock_robot': nav2.UndockRobot, 'spin': nav2.Spin, 'backup': nav2.BackUp,
-    'wait': nav2.Wait,
-}
+# Nav2 on Humble has no docking server and no error codes in action results.
+NAV2_JAZZY = hasattr(nav2, 'DockRobot')
+requires_jazzy_nav2 = pytest.mark.skipif(
+    not NAV2_JAZZY, reason='needs Nav2 from Jazzy on (docking server, error codes)')
+SERVERS = {name: getattr(nav2, action) for name, action in (
+    ('navigate_to_pose', 'NavigateToPose'), ('navigate_through_poses', 'NavigateThroughPoses'),
+    ('follow_waypoints', 'FollowWaypoints'), ('dock_robot', 'DockRobot'),
+    ('undock_robot', 'UndockRobot'), ('spin', 'Spin'), ('backup', 'BackUp'),
+    ('wait', 'Wait')) if hasattr(nav2, action)}
 
 
 def wait_for(predicate, timeout=5.0, period=0.01):
@@ -156,7 +161,7 @@ class Env:
         self.executor = MultiThreadedExecutor(num_threads=8)
         self.fake = FakeNav2()
         self.executor.add_node(self.fake)
-        self.thread = threading.Thread(target=self.executor.spin, daemon=True)
+        self.thread = threading.Thread(target=spin, args=(self.executor,), daemon=True)
         self.thread.start()
         self.nodes = []
 

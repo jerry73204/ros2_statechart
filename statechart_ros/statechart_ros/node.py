@@ -26,6 +26,7 @@ import json
 import threading
 import time
 
+from rcl_interfaces.msg import ParameterDescriptor
 import rclpy
 from rclpy.callback_groups import ReentrantCallbackGroup
 from rclpy.clock import Clock, ClockType
@@ -38,6 +39,7 @@ from statechart_ros import introspection
 from statechart_ros.host import destroy_waitable, qos_profile, RosHost
 from statechart_ros.loader import ChartError, load_chart
 from statechart_ros.runtime import call_with, ChartRunner, to_json
+from statechart_ros.spin import spin
 from statechart_ros.validate import errors, import_interface, import_model, matches, validate
 from statechart_ros_msgs.srv import GetStructure, SendEvent
 
@@ -179,9 +181,9 @@ class StatechartNode(LifecycleNode):
                 value = None
             if not self.has_parameter(name):
                 if value is None:
-                    self.get_logger().warning(f'ros:param {name}: the <data> default is not a '
-                                              'literal; the parameter has no default')
-                    self.declare_parameter(name, Parameter.Type.STRING)
+                    # No typed default (None): any type, e.g. an array of numbers.
+                    self.declare_parameter(name, None,
+                                           ParameterDescriptor(dynamic_typing=True))
                 else:
                     self.declare_parameter(name, value)
             current = self.get_parameter(name).value
@@ -460,7 +462,7 @@ def main(args=None):
                 if node.trigger_configure() == TransitionCallbackReturn.SUCCESS:
                     node.trigger_activate()
             threading.Thread(target=bring_up, daemon=True).start()
-        executor.spin()
+        spin(executor)
     except (KeyboardInterrupt, ExternalShutdownException):
         pass
     finally:

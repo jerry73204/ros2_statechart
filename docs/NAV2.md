@@ -25,7 +25,12 @@ class Mission:
 `pose` (and each name of `poses`) is looked up first in the datamodel (a
 `geometry_msgs/PoseStamped`, a `Pose`, a mapping `{x, y, yaw, frame_id}` or a
 list `[x, y, yaw]`), then in the YAML file named by the node parameter
-`named_poses` (a path or `package://` URL):
+`named_poses` (a path or `package://` URL). Chart expressions have no list
+literals (FORMAT.md section 8), so a pose reaches the datamodel from a
+parameter (`<data id="goal_pose" expr="None"/>` with
+`<ros:param name="goal_pose"/>`, set to `[x, y, yaw]` in a parameter file),
+from event data (`<assign location="goal_pose" expr="msg.pose"/>`), or from
+the named poses:
 
 ```yaml
 frame_id: map

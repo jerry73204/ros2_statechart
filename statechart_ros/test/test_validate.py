@@ -32,6 +32,15 @@ def rules(body, **kwargs):
     return found
 
 
+def has_docking():
+    try:
+        from nav2_msgs.action import DockRobot  # noqa: F401
+    except ImportError:
+        return False
+    return True
+
+
+@pytest.mark.skipif(not has_docking(), reason='the README example docks (Nav2 Jazzy on)')
 def test_readme_example_is_valid():
     findings = validate(load_chart(chart_path('readme_example.scxml')))
     assert findings == []

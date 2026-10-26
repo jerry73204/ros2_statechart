@@ -11,7 +11,7 @@
   <url type="repository">https://github.com/jerry73204/ros2_statechart</url>
 
   <buildtool_depend>ament_cmake</buildtool_depend>
-  <buildtool_depend>ament_cmake_python</buildtool_depend>
+  <buildtool_depend>python3</buildtool_depend>
 
   <!-- The io extra of python-statemachine. SCXML loading needs neither;
        PyYAML reads YAML charts, jsonschema validates JSON and YAML charts. -->

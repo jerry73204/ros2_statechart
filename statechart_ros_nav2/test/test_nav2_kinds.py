@@ -18,11 +18,13 @@
 import math
 import time
 
-from nav2_util import chart, Env, Model, Script, wait_for
+from nav2_util import chart, Env, Model, requires_jazzy_nav2, Script, wait_for
 import pytest
 from statechart_ros.validate import errors, validate
 
 POSES = 'poses:\n  wp_a: {x: 1.0, y: 2.0, yaw: 1.5707963}\n  wp_b: [3.0, -1.0, 0.0]\n'
+
+pytestmark = requires_jazzy_nav2
 
 
 @pytest.fixture(scope='module')
@@ -39,9 +41,9 @@ def poses_file(tmp_path):
     return str(path)
 
 
-def run_kind(env, tmp_path, name, invoke, poses_file=None, data=''):
+def run_kind(env, tmp_path, name, invoke, poses_file=None, data='', params=(), extra=''):
     Model.outcomes = []
-    body = (f'<datamodel>{data}</datamodel>' if data else '') + (
+    body = (f'<datamodel>{data}</datamodel>' if data else '') + extra + (
         '<state id="a"><transition event="go" target="b"/></state>'
         f'<state id="b">{invoke}'
         '<ros:outcome status="succeeded" cond="record" target="ok"/>'
@@ -52,7 +54,7 @@ def run_kind(env, tmp_path, name, invoke, poses_file=None, data=''):
     path.write_text(chart(body))
     from statechart_ros.loader import load_chart
     assert errors(validate(load_chart(str(path)))) == []
-    params = [('named_poses', poses_file)] if poses_file else []
+    params = list(params) + ([('named_poses', poses_file)] if poses_file else [])
     handle = env.chart_node(path, name, params)
     handle.send('go')
     return handle
@@ -73,7 +75,8 @@ def test_navigate_to_pose_fills_the_goal_from_a_named_pose(env, tmp_path, poses_
 
 def test_navigate_to_pose_from_a_datamodel_value(env, tmp_path):
     h = run_kind(env, tmp_path, 'nav_dm', '<ros:invoke kind="nav2/navigate_to_pose" '
-                 'pose="goal_pose"/>', data='<data id="goal_pose" expr="[4.0, 5.0, 0.0]"/>')
+                 'pose="goal_pose"/>', data='<data id="goal_pose" expr="None"/>',
+                 extra='<ros:param name="goal_pose"/>', params=[('goal_pose', [4.0, 5.0, 0.0])])
     assert h.wait_config({'ok'})
     goal = env.fake.goals['navigate_to_pose'][-1]
     assert (goal.pose.pose.position.x, goal.pose.pose.position.y) == (4.0, 5.0)
@@ -99,11 +102,10 @@ def test_navigate_through_poses_and_follow_waypoints(env, tmp_path, poses_file):
     goal = env.fake.goals['navigate_through_poses'][-1]
     assert [p.pose.position.x for p in goal.poses] == [1.0, 3.0]
     h = run_kind(env, tmp_path, 'follow', '<ros:invoke kind="nav2/follow_waypoints" '
-                 'poses="route" loops="2"/>',
-                 data='<data id="route" expr="[[0.0, 0.0, 0.0], [1.0, 1.0, 0.0]]"/>')
+                 'poses="wp_a wp_b" loops="2"/>', poses_file)
     assert h.wait_config({'ok'})
     goal = env.fake.goals['follow_waypoints'][-1]
-    assert [p.pose.position.x for p in goal.poses] == [0.0, 1.0]
+    assert [p.pose.position.x for p in goal.poses] == [1.0, 3.0]
     assert goal.number_of_loops == 2
 
 

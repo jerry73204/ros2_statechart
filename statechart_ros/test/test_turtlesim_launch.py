@@ -27,6 +27,7 @@ import launch_testing.actions
 import pytest
 import rclpy
 from rclpy.qos import DurabilityPolicy, QoSProfile
+from statechart_ros.spin import spin
 from statechart_ros_msgs.msg import StatechartStatus, Transition
 from statechart_ros_msgs.srv import SendEvent
 
@@ -62,7 +63,7 @@ class TestTurtlesimDemo(unittest.TestCase):
                                      cls.transitions.append, 100)
         cls.executor = rclpy.executors.MultiThreadedExecutor()
         cls.executor.add_node(cls.node)
-        cls.thread = threading.Thread(target=cls.executor.spin, daemon=True)
+        cls.thread = threading.Thread(target=spin, args=(cls.executor,), daemon=True)
         cls.thread.start()
 
     @classmethod

@@ -66,7 +66,7 @@ def reset_scripted():
     yield
 
 
-def runner_of(body, model=None, **kwargs):
+def runner_of(body, model=None, check=True, **kwargs):
     spec = spec_of(body, **kwargs)
     assert spec.engine_class is not None, spec.findings
     host = FakeHost()
@@ -297,5 +297,35 @@ def test_reaching_a_top_level_final_ends_the_run_with_its_data():
         runner.send('go')
         assert not runner.running
         assert runner.final == ('done', {'code': 7})
+    finally:
+        runner.shutdown()
+
+
+def test_a_guard_must_return_a_bool():
+    class Model:
+
+        def __init__(self):
+            self.answer = 1
+
+        def ready(self):
+            return self.answer
+
+    model = Model()
+    runner, _ = runner_of(
+        '<state id="a"><transition event="go" cond="ready" target="b"/>'
+        '<transition event="error.execution" target="fault"/></state>'
+        '<state id="b"/><state id="fault"/>', model=model, check=False)
+    try:
+        runner.send('go')
+        assert runner.configuration() == ['fault']
+    finally:
+        runner.shutdown()
+    model.answer = True
+    runner, _ = runner_of(
+        '<state id="a"><transition event="go" cond="ready" target="b"/></state>'
+        '<state id="b"/>', model=model, check=False)
+    try:
+        runner.send('go')
+        assert runner.configuration() == ['b']
     finally:
         runner.shutdown()

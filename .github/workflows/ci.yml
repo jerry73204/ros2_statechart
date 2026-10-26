@@ -8,25 +8,49 @@ on:
 
 jobs:
   build-and-test:
-    name: Jazzy build, lint and test
+    name: ${{ matrix.distro }} build, lint and test
     runs-on: ubuntu-24.04
     container:
-      image: ubuntu:noble
+      image: ${{ matrix.image }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - distro: humble
+            image: ubuntu:jammy
+            testing: false
+            packages: >-
+              python_statemachine_vendor statechart_ros_msgs statechart_ros
+              statechart_ros_nav2 statechart_ros_cli statechart_ros_viewer
+              statechart_ros_testing
+            skip-keys: ''
+          - distro: jazzy
+            image: ubuntu:noble
+            testing: false
+            packages: >-
+              python_statemachine_vendor statechart_ros_msgs statechart_ros
+              statechart_ros_nav2 statechart_ros_cli statechart_ros_viewer
+              statechart_ros_testing
+            skip-keys: ''
+          # Rolling has no Nav2 binaries: statechart_ros_nav2 is left out and
+          # the tests that need nav2_msgs skip themselves.
+          - distro: rolling
+            image: ubuntu:resolute
+            testing: true
+            packages: >-
+              python_statemachine_vendor statechart_ros_msgs statechart_ros
+              statechart_ros_cli statechart_ros_viewer statechart_ros_testing
+            skip-keys: nav2_msgs statechart_ros_nav2
     steps:
       - uses: ros-tooling/setup-ros@0.7.19
         with:
-          required-ros-distributions: jazzy
+          required-ros-distributions: ${{ matrix.distro }}
+          use-ros2-testing: ${{ matrix.testing }}
       - uses: ros-tooling/action-ros-ci@0.4.8
         with:
-          target-ros2-distro: jazzy
-          package-name: >-
-            python_statemachine_vendor
-            statechart_ros_msgs
-            statechart_ros
-            statechart_ros_nav2
-            statechart_ros_cli
-            statechart_ros_viewer
-            statechart_ros_testing
+          target-ros2-distro: ${{ matrix.distro }}
+          package-name: ${{ matrix.packages }}
+          rosdep-skip-keys: ${{ matrix.skip-keys }}
           colcon-defaults: |
             {
               "test": {

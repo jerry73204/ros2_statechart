@@ -27,9 +27,10 @@ import itertools
 import os
 
 from lxml import etree
+from statechart_ros import expressions
 from statechart_ros import kinds as kinds_mod
 from statechart_ros.loader import (
-    ELEMENTS, Finding, INVOKE_TAGS, OUTPUT_ATTRS, PREFIX, REFUSAL_VAR)
+    ELEMENTS, Finding, INVOKE_TAGS, OUTPUT_ATTRS, PREFIX)
 
 SCHEMA_DIR = os.path.join(os.path.dirname(__file__), 'schema')
 MAX_CONFIGURATIONS = 20000
@@ -65,6 +66,7 @@ def validate(spec, check_types=True, check_model=True):
     findings += check_inputs_handled(spec)
     findings += check_params(spec)
     findings += check_restrictions(spec)
+    findings += check_expressions(spec)
     unique = []
     seen = set()
     for f in findings:
@@ -226,16 +228,57 @@ def check_model_names(spec):
         elif not callable(getattr(model, name, None)):
             found.append(_f(spec, line, 4, f'{what}: the model {spec.model_class} has no '
                                            f'method "{name}"'))
-    known = set(spec.data) | {REFUSAL_VAR} | SYSTEM_NAMES
-    for t in spec.transitions:
-        if not t.cond or t.origin != 'scxml':
+    data_builders = any(el.tag == 'subscribe' and el.get('data') for el in spec.elements)
+    for line, role, text, _state in spec.expressions:
+        if role == 'location':
             continue
-        for name in sorted(expression_names(t.cond) - known):
-            if name.startswith('_'):
+        for name in sorted(expressions.names(text)):
+            if name in spec.data or name in expressions.EVENT_DATA or name in SYSTEM_NAMES:
                 continue
-            if model is None or not hasattr(model, name):
-                found.append(_f(spec, t.line, 4, f'condition "{t.cond}": "{name}" is neither a '
-                                                 'datamodel value nor a model method'))
+            if name.startswith('_') or name.startswith(PREFIX):
+                continue  # rule 10 reports reserved names
+            if model is not None and hasattr(model, name):
+                continue
+            if data_builders:
+                found.append(_f(spec, line, 4, f'"{text}": "{name}" is neither a datamodel '
+                                               'value, a model method nor msg/request/goal; '
+                                               'it must come from a data builder', 'warning'))
+            else:
+                found.append(_f(spec, line, 4, f'"{text}": "{name}" is neither a datamodel '
+                                               'value, a model method nor event data '
+                                               '(msg, request, goal)'))
+    return found
+
+
+def model_context(spec):
+    """Return the names expressions of this chart may use."""
+    context = expressions.Context(data=dict(spec.data), states=set(spec.states))
+    if spec.model_class:
+        try:
+            model = import_model(spec.model_class)
+        except Exception:  # noqa: B902 - rule 4 reports it
+            model = None
+        if model is not None:
+            for name in dir(model):
+                if name.startswith('_'):
+                    continue
+                context.model.add(name)
+                if callable(getattr(model, name, None)):
+                    context.guards.add(name)
+    return context
+
+
+# Rule 10 -------------------------------------------------------------------------
+
+def check_expressions(spec):
+    """Rule 10: every expression is a chart expression; conditions are boolean."""
+    context = model_context(spec)
+    found = []
+    for line, role, text, _state in spec.expressions:
+        for problem in expressions.check(text, role, context):
+            label = {'cond': 'condition', 'location': 'location'}.get(role, 'expression')
+            found.append(_f(spec, line, 10, f'{label} "{text}": {problem}'
+                            if role != 'location' else problem))
     return found
 
 
@@ -374,7 +417,7 @@ def check_restrictions(spec):
             found.append(_f(spec, line, 9, "<send> with a delay holds the node's worker until "
                                            'it is due; use ros:after in the state instead'))
     for data_id in spec.data:
-        if data_id in RESERVED_DATA or data_id.startswith(PREFIX):
+        if data_id in RESERVED_DATA or expressions.reserved(data_id):
             found.append(_f(spec, 1, 9, f'<data id="{data_id}"> uses a reserved name'))
     for sid, info in spec.states.items():
         if sid.startswith(PREFIX) and 'anonymous' not in sid:

@@ -40,6 +40,7 @@ import pytest
 import rclpy
 from rclpy.qos import DurabilityPolicy, QoSProfile
 from sensor_msgs.msg import BatteryState
+from statechart_ros.spin import spin
 from statechart_ros_msgs.msg import StatechartStatus, Transition
 from statechart_ros_msgs.srv import SendEvent
 
@@ -75,7 +76,7 @@ class TestPatrolInSimulation(unittest.TestCase):
         cls.client = cls.node.create_client(SendEvent, '/patrol/command')
         cls.executor = rclpy.executors.MultiThreadedExecutor()
         cls.executor.add_node(cls.node)
-        cls.thread = threading.Thread(target=cls.executor.spin, daemon=True)
+        cls.thread = threading.Thread(target=spin, args=(cls.executor,), daemon=True)
         cls.thread.start()
         cls.start = time.monotonic()
 

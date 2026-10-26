@@ -90,6 +90,20 @@ def to_json(value):
     return json.dumps(to_jsonable(value), sort_keys=True)
 
 
+class GuardTypeError(TypeError):
+    """A guard returned something other than a bool (docs/FORMAT.md section 8)."""
+
+
+def guard_result(fn, value):
+    """Return a guard's value, which must be a bool; anything else is an error."""
+    if isinstance(value, bool):
+        return value
+    if type(value).__name__ == 'bool_':  # numpy.bool_
+        return bool(value)
+    raise GuardTypeError(f'guard {getattr(fn, "__name__", fn)} returned '
+                         f'{type(value).__name__} {value!r}, not a bool')
+
+
 class ChartModel:
     """
     The engine's model object: datamodel values, generated conditions, the user's model.
@@ -124,7 +138,7 @@ class ChartModel:
         model = self
 
         def method(*args, **kwargs):
-            return call_with(fn, dict(kwargs, datamodel=model))
+            return guard_result(fn, call_with(fn, dict(kwargs, datamodel=model)))
 
         method.__name__ = getattr(fn, '__name__', 'method')
         return method
@@ -138,7 +152,8 @@ class ChartModel:
                 return False
             if out.cond:
                 available = dict(kwargs, status=status, datamodel=self)
-                return bool(call_with(getattr(user, out.cond), available))
+                fn = getattr(user, out.cond)
+                return guard_result(fn, call_with(fn, available))
             return True
 
         condition.__name__ = out.name

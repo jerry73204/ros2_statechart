@@ -23,7 +23,7 @@ task.
 
 import os
 
-from nav2_util import Env, Script, wait_for
+from nav2_util import Env, requires_jazzy_nav2, Script, wait_for
 import pytest
 from rclpy.qos import QoSProfile
 from sensor_msgs.msg import BatteryState
@@ -36,6 +36,8 @@ EXAMPLES = os.path.join(HERE, '..', 'examples')
 CHART = os.path.join(EXAMPLES, 'patrol.scxml')
 POSES = os.path.join(EXAMPLES, 'sandbox_poses.yaml')
 WP = {'wp_a': (-2.0, -0.5), 'wp_b': (0.55, -1.65), 'wp_c': (0.55, 1.65)}
+
+pytestmark = requires_jazzy_nav2
 
 
 @pytest.fixture(scope='module')

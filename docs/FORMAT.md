@@ -332,6 +332,13 @@ operators; chained comparisons, `is`, `in`; and the JavaScript tokens the
 engine would translate (`&&`, `||`, `===`, `!==`, `true`, `false`, `null`,
 ENGINE.md E20), so that a chart stays Python.
 
+**Scalars only.** There are no list, tuple, dict or set literals, in
+`<data expr>` as anywhere else. Values such as poses, waypoint lists or
+tables are configuration and belong in parameter files: a `ros:param`
+whose `<data>` default is `None` takes any parameter type, arrays included,
+and Nav2 kinds read named poses from a YAML file (NAV2.md). Event data can
+still carry structured messages (`msg.pose`), read through attributes.
+
 **No truthiness.** A condition must be boolean: a comparison, a datamodel
 value whose initial literal is `True` or `False`, `In(...)`, a guard name, or
 `and`, `or`, `not` of those. A guard method must return a `bool`; another

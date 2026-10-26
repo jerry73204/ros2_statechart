@@ -225,8 +225,12 @@ and in invoke kinds, which are Python packages installed like any other.
 - ROS 2 Humble (Python 3.10), Jazzy (Python 3.12) and Rolling are
   supported: CI builds and tests every package on all three on every push
   (Nav2 in simulation runs nightly on Jazzy). Packages that need a newer
-  ROS interface than Humble has (the Nav2 docking server) say so and skip
-  those tests there.
+  ROS interface than Humble has (the Nav2 docking server, error codes in
+  Nav2 results) say so and skip those tests there. Rolling has no Nav2
+  binaries, so `statechart_ros_nav2` is built and tested on Humble and
+  Jazzy only. On Humble, rclpy's executor raises `InvalidHandle` when an
+  entity is destroyed while it waits (as a lifecycle cleanup does);
+  `statechart_ros.spin.spin` retries, and the node's `main` uses it.
 - python-statemachine is not in Ubuntu, and the ROS buildfarm does not allow
   pip dependencies for binary packages, so `python_statemachine_vendor`
   ships a pinned release; the version is raised only with the engine probes

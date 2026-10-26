@@ -32,6 +32,7 @@ from rclpy.node import Node
 from rclpy.parameter import Parameter
 from rclpy.qos import DurabilityPolicy, QoSProfile
 from statechart_ros.node import StatechartNode
+from statechart_ros.spin import spin
 from statechart_ros_msgs.msg import StatechartStatus, StatechartStructure, Transition
 from statechart_ros_msgs.srv import GetStructure, SendEvent
 from std_msgs.msg import Bool, Int32
@@ -140,7 +141,7 @@ def ros():
     executor = MultiThreadedExecutor(num_threads=8)
     servers = Servers()
     executor.add_node(servers)
-    thread = threading.Thread(target=executor.spin, daemon=True)
+    thread = threading.Thread(target=spin, args=(executor,), daemon=True)
     thread.start()
     yield executor, servers
     executor.shutdown()

@@ -222,6 +222,7 @@ class ChartSpec:
     initial: tuple = ()
     elements: list = field(default_factory=list)    # every ros: element
     sends: list = field(default_factory=list)       # (line, attrs) of <send>
+    expressions: list = field(default_factory=list)  # (line, role, text, state)
     findings: list = field(default_factory=list)    # problems found while reading
 
     def finding(self, line, rule, message, severity='error'):
@@ -484,6 +485,9 @@ def _collect(spec, root):
                                  if spec.states[c].tag != 'history']
                         info.initial = tuple(first[:1])
             elif tag == 'transition':
+                if child.get('cond') is not None:
+                    spec.expressions.append((child.sourceline, 'cond', child.get('cond'),
+                                             parent_state))
                 if parent_state is not None and local(el.tag) in STATE_TAGS + ('history',):
                     spec.transitions.append(TransitionInfo(
                         source=parent_state, events=tuple((child.get('event') or '').split()),
@@ -494,6 +498,20 @@ def _collect(spec, root):
             elif tag == 'data':
                 if child.get('id'):
                     spec.data[child.get('id')] = child.get('expr')
+                if child.get('expr') is not None:
+                    spec.expressions.append((child.sourceline, 'value', child.get('expr'),
+                                             parent_state))
+            elif tag in ('if', 'elseif'):
+                if child.get('cond') is not None:
+                    spec.expressions.append((child.sourceline, 'cond', child.get('cond'),
+                                             parent_state))
+                walk(child, parent_state)
+            elif tag == 'assign':
+                spec.expressions.append((child.sourceline, 'location',
+                                         child.get('location') or '', parent_state))
+                if child.get('expr') is not None:
+                    spec.expressions.append((child.sourceline, 'value', child.get('expr'),
+                                             parent_state))
             elif tag == 'send':
                 spec.sends.append((child.sourceline, dict(child.attrib)))
                 walk(child, parent_state)
