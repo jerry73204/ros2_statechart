@@ -28,8 +28,8 @@ import queue
 import threading
 
 from statechart_ros.kinds import (
-    ACTION_TYPE, Attr, BUILDER, ENUM, EVENT, FLOAT, GUARD, HANDLER, InvokeKind, MSG_TYPE,
-    NAME, Outcome, PATH, QOS_CHOICES, SRV_TYPE)
+    ACTION_TYPE, Attr, BOOL, BUILDER, ENUM, EVENT, FLOAT, GUARD, HANDLER, InvokeKind,
+    MSG_TYPE, NAME, Outcome, PATH, QOS_CHOICES, SRV_TYPE)
 from statechart_ros.runtime import Cancelled, to_jsonable
 
 POLL = 0.02
@@ -349,17 +349,115 @@ class WaitForKind(InvokeKind):
 
 
 class ChartKind(InvokeKind):
-    """Run a child chart in the same node; it is stopped when the state is left."""
+    """
+    Run a child chart in the same node; it is stopped when the state is left.
+
+    The child's top-level ``<final>`` states are the statuses: reaching
+    ``<final id="docked">`` ends the invoke with status ``docked``, its
+    donedata as ``result`` and as outcome data. The child gets the events its
+    parent processes when ``autoforward`` is true.
+    """
 
     name = 'ros/chart'
     attributes = {
-        'src': Attr(PATH, required=True, doc='the child chart: a path or package:// URL'),
+        'src': Attr(PATH, required=True,
+                    doc='the child chart: a path (relative to the parent) or package:// URL'),
+        'autoforward': Attr(BOOL, default=False,
+                            doc="forward the parent's events to the child"),
     }
-    statuses = ('succeeded', 'failed')
+    statuses = ()
 
     @classmethod
     def summary(cls, attrs):
         return {'target': attrs.get('src', ''), 'type': 'chart'}
+
+    @classmethod
+    def statuses_for(cls, attrs):
+        from statechart_ros.loader import CHILD_PATH, ChartError, load_chart
+        path = attrs.get(CHILD_PATH)
+        if not path:
+            return ()
+        try:
+            child = load_chart(path, load_engine=False)
+        except (ChartError, OSError):
+            return ()
+        return tuple(sid for sid, info in child.states.items()
+                     if info.tag == 'final' and info.parent is None)
+
+    def setup(self):
+        from statechart_ros.host import ChildHost
+        from statechart_ros.loader import CHILD_PATH, load_chart
+        from statechart_ros.runtime import ChartRunner
+        from statechart_ros.validate import import_model
+        parent = self.host.runner
+        self.child_spec = load_chart(self.attrs[CHILD_PATH])
+        user = None
+        if self.child_spec.model_class:
+            cls = import_model(self.child_spec.model_class)
+            try:
+                user = cls(self.host.node)
+            except TypeError:
+                user = cls()
+        self.child_host = ChildHost(self.host)
+        self.runner = ChartRunner(self.child_spec, user, self.child_host)
+        if hasattr(self.host, 'setup_outputs'):
+            self.host.setup_outputs(self.child_spec)
+        for kind in self.runner.kinds.values():
+            kind.setup()
+        prefix = self.state_id
+        self.runner.status_observers.append(parent._status_changed)
+        self.runner.observers.append(lambda record: _forward_record(parent, prefix, record))
+        self.autoforward = self.attr('autoforward')
+
+    def teardown(self):
+        runner = getattr(self, 'runner', None)
+        if runner is None:
+            return
+        runner.shutdown()
+        for kind in runner.kinds.values():
+            kind.teardown()
+
+    def child_snapshot(self):
+        runner = getattr(self, 'runner', None)
+        if runner is None or not runner.running:
+            return None
+        return runner.snapshot()
+
+    def forward(self, event, data):
+        runner = getattr(self, 'runner', None)
+        if self.autoforward and runner is not None and runner.running:
+            runner.post(event, data)
+
+    def run(self, invocation):
+        runner = self.runner
+        runner.start()
+        while True:
+            if invocation.cancelled.wait(POLL):
+                runner.stop()
+                return None
+            if not runner.running:
+                final, donedata = runner.final or ('', {})
+                if not final:
+                    return Outcome('', error_msg='the child chart stopped without a final '
+                                                 'state')
+                return Outcome(final, result=dict(donedata), data=dict(donedata))
+
+
+def _forward_record(parent, prefix, record):
+    """Publish a child chart's transition with the parent's, ids qualified."""
+    from dataclasses import replace
+    qualified = replace(
+        record, event=f'{prefix}/{record.event}',
+        source=[f'{prefix}/{s}' for s in record.source],
+        target=[f'{prefix}/{s}' for s in record.target],
+        taken=[' -> '.join(', '.join(f'{prefix}/{x}' for x in side.split(', ') if x)
+                           for side in label.split(' -> ')) for label in record.taken],
+        events=[])
+    for observer in list(parent.observers):
+        try:
+            observer(qualified)
+        except Exception as exc:  # noqa: B902
+            parent.log.error(f'statechart observer failed: {exc!r}')
 
 
 KINDS = [ActionKind, ServiceCallKind, WaitForKind, ChartKind]

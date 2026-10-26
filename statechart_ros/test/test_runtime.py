@@ -29,7 +29,7 @@ class FakeHost(Host):
     def __init__(self):
         self.outputs = []
 
-    def output(self, out, model):
+    def output(self, out, model, runner=None):
         self.outputs.append((out.state, out.when, out.attrs.get('publish'),
                              dict(model.values())))
 

@@ -154,7 +154,8 @@ function drawChart(structure) {
     .sort((a, b) => depthOf(states, a.id) - depthOf(states, b.id));
   for (const s of clusterIds) {
     const n = g.node(s.id);
-    const grp = el('g', { class: `cluster ${s.kind}`, 'data-id': s.id }, clusters);
+    const chartCls = s.invoke && s.invoke.type === 'chart' ? ' child-chart' : '';
+    const grp = el('g', { class: `cluster ${s.kind}${chartCls}`, 'data-id': s.id }, clusters);
     el('rect', { x: n.x - n.width / 2, y: n.y - n.height / 2, width: n.width,
                  height: n.height, rx: 10 }, grp);
     const t = g.node(`${s.id}::title`);

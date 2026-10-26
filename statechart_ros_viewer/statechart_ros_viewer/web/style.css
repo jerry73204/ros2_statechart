@@ -74,3 +74,6 @@ text.note { fill: var(--muted); font-size: 11px; }
 .edge.flash path { stroke: var(--flash); stroke-width: 3; }
 .edge.flash text { fill: var(--flash); }
 .initial-dot { fill: var(--edge); }
+
+/* A state that runs a child chart: the child's states are drawn inside it. */
+.cluster.child-chart > rect { stroke-dasharray: 2 3; }

@@ -24,6 +24,8 @@ on the queue; the worker takes them one at a time.
 """
 
 from concurrent.futures import Future
+# Python 3.10 (Humble): not yet the builtin TimeoutError, which it is from 3.11.
+from concurrent.futures import TimeoutError as FutureTimeout
 from dataclasses import dataclass, field
 import inspect
 import json
@@ -218,8 +220,8 @@ class Host:
         """Wait until event is set or seconds pass; return whether it is set."""
         return event.wait(seconds)
 
-    def output(self, out, model):
-        """Do a ros:on_entry / ros:on_exit output."""
+    def output(self, out, model, runner=None):
+        """Do a ros:on_entry or ros:on_exit output; builders run on the given runner."""
 
     def logger(self):
         return logging.getLogger('statechart_ros')
@@ -302,7 +304,7 @@ class ChartRunner:
         while True:
             try:
                 return future.result(timeout=0.02)
-            except TimeoutError:
+            except FutureTimeout:
                 pass
             if cancelled is not None and cancelled.is_set():
                 future.cancel()
@@ -365,10 +367,15 @@ class ChartRunner:
 
     # --- control and events (any thread) --------------------------------------------
 
-    def start(self, timeout=10.0):
-        """Create the engine instance (entering the initial states) on the worker."""
+    def start(self, timeout=10.0, engine_class=None):
+        """
+        Create the engine instance (entering the initial states) on the worker.
+
+        ``engine_class`` replaces the chart's class for this run (the same chart
+        loaded with other initial data, as RunStatechart goals do).
+        """
         self.start_worker()
-        return self.run_in_worker(self._create, timeout=timeout)
+        return self.run_in_worker(self._create, engine_class, timeout=timeout)
 
     def stop(self, timeout=10.0):
         """Exit every state (outputs and invokes included) and end the run."""
@@ -397,7 +404,7 @@ class ChartRunner:
 
     # --- on the worker --------------------------------------------------------------
 
-    def _create(self):
+    def _create(self, engine_class=None):
         if self.running:
             return self._last
         self.model = ChartModel(self.spec, self.user_model)
@@ -406,7 +413,8 @@ class ChartRunner:
         self._taken = []
         source = []
         start = time.monotonic()
-        self.sm = self.spec.engine_class(model=self.model, listeners=[self.listener])
+        cls = engine_class or self.spec.engine_class
+        self.sm = cls(model=self.model, listeners=[self.listener])
         for key, value in self._initial_data.items():
             setattr(self.model, key, value)
         record = self._record('__initial__', {}, source, start, True, '')
@@ -451,6 +459,11 @@ class ChartRunner:
         record = self._record(event, data, source, start, handled, refusal)
         self._last = EventResult(event, handled, refusal, record.target, record.taken)
         self._notify(record)
+        if event != STOP_EVENT and not event.startswith(('done.', 'error.')):
+            for kind in self.kinds.values():
+                forward = getattr(kind, 'forward', None)
+                if forward is not None:
+                    forward(event, data)
         return self._last
 
     def _record(self, event, data, source, start, handled, refusal):
@@ -481,7 +494,17 @@ class ChartRunner:
         with self._lock:
             invokes = [dict(v, state=k) for k, v in self._invoke_status.items()]
         last = self._last
-        return {'active': list(last.configuration), 'last_event': last.event,
+        active = list(last.configuration)
+        for sid, kind in self.kinds.items():
+            child = getattr(kind, 'child_snapshot', None)
+            if child is None or sid not in active:
+                continue
+            nested = child()
+            if nested is None:
+                continue
+            active += [f'{sid}/{s}' for s in nested['active']]
+            invokes += [dict(i, state=f'{sid}/{i["state"]}') for i in nested['invokes']]
+        return {'active': active, 'last_event': last.event,
                 'handled': last.handled, 'refusal': last.refusal, 'invokes': invokes,
                 'sequence': self.sequence, 'running': self.running}
 
@@ -576,7 +599,7 @@ class ChartRunner:
 
     def _output(self, out):
         try:
-            self.host.output(out, self.model)
+            self.host.output(out, self.model, self)
         except Exception as exc:  # noqa: B902 - an output failure is logged, not fatal
             self.log.error(f'output of state {out.state} (line {out.line}) failed: {exc!r}')
 

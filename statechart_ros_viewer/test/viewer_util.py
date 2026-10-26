@@ -48,6 +48,31 @@ CHART = f"""<scxml xmlns="http://www.w3.org/2005/07/scxml" xmlns:ros="{ROS_NS}"
 </scxml>"""
 
 
+CHILD = f"""<scxml xmlns="http://www.w3.org/2005/07/scxml" xmlns:ros="{ROS_NS}"
+  version="1.0" datamodel="python" initial="STEP1">
+  <state id="STEP1"><transition event="next" target="STEP2"/></state>
+  <state id="STEP2"><transition event="next" target="done"/></state>
+  <final id="done"/>
+</scxml>"""
+
+PARENT = f"""<scxml xmlns="http://www.w3.org/2005/07/scxml" xmlns:ros="{ROS_NS}"
+  version="1.0" datamodel="python" initial="IDLE">
+  <state id="IDLE"><transition event="go" target="PROC"/><ros:ignore event="next"/></state>
+  <state id="PROC"><ros:chart src="child.scxml" autoforward="true"/>
+    <ros:outcome status="done" target="DONE"/>
+    <ros:ignore event="next"/><transition event="go" target="IDLE"/></state>
+  <state id="DONE"><transition event="go" target="PROC"/><ros:ignore event="next"/></state>
+</scxml>"""
+
+
+def write_composed(directory):
+    """Write the parent and child chart; return the parent's path."""
+    (directory / 'child.scxml').write_text(CHILD)
+    path = directory / 'demo.scxml'
+    path.write_text(PARENT)
+    return path
+
+
 def wait_for(predicate, timeout=10.0, period=0.05):
     deadline = time.monotonic() + timeout
     while time.monotonic() < deadline:

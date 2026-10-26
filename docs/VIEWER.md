@@ -18,7 +18,9 @@ The page shows, for the chart chosen at the top (or named in the URL,
 `http://robot:8095/#/patrol`):
 
 - **the diagram**: nested states as boxes in boxes, parallel states with a
-  dashed border and `∥`, history states as `H`/`H*`, the `ros:` annotations
+  dashed border and `∥`, history states as `H`/`H*`, a child chart
+  (`ros:chart`) inside the state that runs it, with a dotted border and its
+  states' ids qualified (`DOCKING/APPROACH`), the `ros:` annotations
   under each state's name (its invoke, outputs, timeouts, refusals),
   transitions labelled with their event and guard, outcomes with their
   statuses. Drag to pan, scroll to zoom;

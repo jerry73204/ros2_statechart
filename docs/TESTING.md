@@ -49,6 +49,11 @@ def test_dock_retries_once():
 - `t.data` is the datamodel; `t.outputs` the recorded `ros:on_entry` and
   `ros:on_exit` outputs; `t.cancelled` the states whose invoke was cancelled.
 
+A child chart (`ros:chart`) is one invoke here, like any other: its
+statuses are the child's top-level `<final>` ids, and the test ends it with
+`t.complete('DOCKING', 'docked', tries=1)`. Test the child chart with its own
+`chart_under_test`.
+
 Every call returns once the chart has settled (all queued events and invoke
 outcomes processed), so tests need no sleeps.
 

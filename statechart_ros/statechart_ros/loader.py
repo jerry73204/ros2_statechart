@@ -82,6 +82,7 @@ OUTPUT_ATTRS = {
     'set_param': {'set_param': Attr(STRING, required=True), 'node': Attr(STRING),
                   'value': Attr(STRING, required=True)},
 }
+CHILD_PATH = 'sc_ros_path'  # the resolved file of a ros:chart, added by the loader
 _REF = 'sc_ros_ref'  # marks a collected ros:outcome with its generated name
 INVOKE_TAGS = {
     'action': 'ros/action', 'service_call': 'ros/service_call', 'wait_for': 'ros/wait_for',
@@ -308,11 +309,49 @@ class ChartSpec:
             'targets': list(t.targets), 'type': t.type or 'external', 'origin': t.origin,
             'label': t.label, 'line': t.line,
         } for t in self.transitions]
-        return {
+        result = {
             'name': self.name, 'source': self.path or '', 'initial': list(self.initial),
             'states': states, 'transitions': transitions,
             'input_events': sorted(set(self.input_events()) | set(self.command_events())),
         }
+        _nest_children(self, result, depth=0)
+        return result
+
+
+def _nest_children(spec, structure, depth, prefix=''):
+    """Add the states of child charts (ros:chart), qualified by their invoking state."""
+    if depth > 8:
+        return
+    by_id = {s['id']: s for s in structure['states']}
+    for state, inv in spec.invokes.items():
+        if inv.kind != 'ros/chart' or not inv.attrs.get(CHILD_PATH):
+            continue
+        try:
+            child = load_chart(inv.attrs[CHILD_PATH], load_engine=False)
+        except (ChartError, OSError):
+            continue
+        sub = child.structure()
+        owner = prefix + state
+        qualify = (lambda sid, owner=owner: f'{owner}/{sid}')
+        for s in sub['states']:
+            entry = dict(s)
+            entry['id'] = qualify(s['id'])
+            entry['parent'] = qualify(s['parent']) if s['parent'] else owner
+            entry['children'] = [qualify(c) for c in s['children']]
+            entry['initial'] = [qualify(i) for i in s['initial']]
+            entry['chart'] = qualify(s['chart']) if s.get('chart') else owner
+            structure['states'].append(entry)
+            if not s['parent'] and owner in by_id:
+                by_id[owner]['children'].append(entry['id'])
+        for t in sub['transitions']:
+            entry = dict(t)
+            entry['source'] = qualify(t['source'])
+            entry['targets'] = [qualify(x) for x in t['targets']]
+            structure['transitions'].append(entry)
+        if owner in by_id:
+            by_id[owner].setdefault('initial', [])
+            if not by_id[owner]['initial']:
+                by_id[owner]['initial'] = [qualify(i) for i in sub['initial']]
 
 
 def _kind_of(info):
@@ -354,6 +393,14 @@ def is_scxml(el, name=None):
     if not isinstance(el.tag, str) or namespace(el.tag) != SCXML_NS:
         return False
     return name is None or local(el.tag) == name
+
+
+def child_path(parent_path, src):
+    """Resolve a ros:chart src: package:// URLs, absolute paths, or relative to the parent."""
+    if src.startswith('package://') or os.path.isabs(src):
+        return resolve_path(src)
+    base = os.path.dirname(parent_path) if parent_path and parent_path != '<chart>' else '.'
+    return os.path.normpath(os.path.join(base, src))
 
 
 def resolve_path(source):
@@ -563,6 +610,8 @@ def _collect_ros(spec, el, parent, parent_state):
                                            f'(line {spec.invokes[parent_state].line}); two '
                                            'pieces of work are two regions of a <parallel>')
             return
+        if kind_name == 'ros/chart' and attrs.get('src'):
+            attrs[CHILD_PATH] = child_path(spec.path, attrs['src'])
         spec.invokes[parent_state] = InvokeSpec(parent_state, tag, kind_name, attrs,
                                                 el.sourceline)
         return
@@ -672,9 +721,9 @@ def _expand(spec, root, params):
         else:
             _remove(el)
     _declare_data(engine, REFUSAL_VAR, repr(''))
-    for name in spec.params:
-        if name in params:
-            _set_data(engine, name, repr(params[name]))
+    for name, value in params.items():
+        if name in spec.data:
+            _set_data(engine, name, repr(value))
     plain = copy.deepcopy(engine)
     _wrap(engine, spec.initial)
     for state, afters in spec.afters.items():

@@ -97,6 +97,7 @@
     <xsd:annotation><xsd:documentation>Invoke: run a child chart in the same node.</xsd:documentation></xsd:annotation>
     <xsd:complexType>
       <xsd:attribute name="src" type="xsd:string" use="required"/>
+      <xsd:attribute name="autoforward" type="xsd:boolean" use="optional"/>
     </xsd:complexType>
   </xsd:element>
   <xsd:element name="outcome">

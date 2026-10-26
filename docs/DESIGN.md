@@ -106,7 +106,25 @@ trees, a docking server's states) remains theirs.
 - **Parameters.** `chart` (path or `package://`), `autostart`,
   `debug_events`, `status_rate_max` (Hz, default 20; status changes in
   between are coalesced), `datamodel_publish` (names of datamodel values in
-  the status), and one parameter per `ros:param`.
+  the status), `run_as_action` (an action name: the node waits for
+  `RunStatechart` goals instead of starting its chart on activation), and
+  one parameter per `ros:param`.
+- **Composition.** A chart grows in three ways, chosen by what the parts
+  share:
+  - *nested states and parallel regions in one chart* when the parts share
+    data, guards or events: regions that read each other's state (`In()`)
+    or one datamodel must stay in one chart, since two charts share
+    nothing but events;
+  - *a child chart in the same node* (`ros:chart`, [FORMAT.md](FORMAT.md)
+    section 5) for a procedure with its own states that a parent runs as one
+    step (docking, a recovery): it is reusable, testable on its own and
+    stopped with the parent's state; it costs no process and no transport;
+  - *a chart in another node* (`run_as_action` and `ros:action` on
+    `RunStatechart`) when the procedure belongs with other software (a
+    different machine, a driver's process, a separate lifecycle) or several
+    parents use one instance. The action gives cancellation, feedback and a
+    result for free, at the price of a goal round trip and of an action
+    server that may be absent.
 - **Testing without ROS.** The queue, worker, listener, invokes and outputs
   are one class, `ChartRunner`, which talks to ROS only through a host
   object; the node gives it a ROS host, tests a fake one.
@@ -251,4 +269,5 @@ and in invoke kinds, which are Python packages installed like any other.
 | Expression language | a Python subset, validated (FORMAT.md section 8) | the team writes Python; launch files evaluate Python; ECMAScript rejected for its coercions; CEL possible later as a second language through generated callbacks |
 | Unhandled events | an error unless refused or ignored | a robot must answer every command |
 | Process structure | one chart per node; other nodes invoked | statechart guarantees need one configuration and one queue |
+| Composition | child charts in the same node (`ros:chart`, own queue, stopped with the invoking state) or in another node through `RunStatechart` | a procedure reused as one step, cancelled like any invoke; sharing data or guards stays one chart |
 | Viewer | web page served by a node | works on any machine with a browser |

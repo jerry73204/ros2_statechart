@@ -100,3 +100,23 @@ def test_outcome_data_reach_outcome_guards():
         t.send('go')
         assert t.active('a')
         assert t.finished == [('b', 'aborted'), ('b', 'aborted')]
+
+
+def test_a_child_chart_is_one_invoke_whose_statuses_are_its_finals(tmp_path):
+    (tmp_path / 'child.scxml').write_text(doc(
+        '<state id="a"><transition event="next" target="ok"/>'
+        '<transition event="give_up" target="lost"/></state>'
+        '<final id="ok"/><final id="lost"/>'))
+    (tmp_path / 'parent.scxml').write_text(doc(
+        '<state id="a"><transition event="go" target="b"/></state>'
+        '<state id="b"><ros:chart src="child.scxml"/><ros:outcome status="ok" target="c"/>'
+        '<ros:outcome status="lost" target="a"/></state>'
+        '<state id="c"><transition event="go" target="b"/></state>'))
+    with chart_under_test(str(tmp_path / 'parent.scxml')) as t:
+        t.send('go')
+        assert t.pending() == ['b']
+        t.complete('b', 'ok')
+        assert t.active('c')
+    with chart_under_test(str(tmp_path / 'parent.scxml'), outcomes={'b': 'succeeded'}) as t:
+        with pytest.raises(ChartTestError, match='has no status "succeeded" \\(ok, lost\\)'):
+            t.send('go')

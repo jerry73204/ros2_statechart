@@ -133,6 +133,11 @@ class InvokeKind:
         return []
 
     @classmethod
+    def statuses_for(cls, attrs):
+        """Return the statuses this use can end with (the class's, unless they vary)."""
+        return tuple(cls.statuses)
+
+    @classmethod
     def summary(cls, attrs):
         """Return the target and type shown in the structure and the viewer."""
         target = ''
@@ -148,6 +153,7 @@ class InvokeKind:
         self.host = host
         self.state_id = state_id
         self.attrs = attrs
+        self.statuses = self.statuses_for(attrs)
 
     def setup(self):
         """Create clients and other resources once, when the chart is activated."""

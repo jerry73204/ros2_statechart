@@ -38,7 +38,7 @@ sys.path.insert(0, os.path.join(HERE, '..', 'test'))
 sys.path.insert(0, os.path.join(HERE, '..', '..', 'statechart_ros_nav2', 'test'))
 
 from statechart_ros.spin import spin  # noqa: E402
-from viewer_util import CHART, Setup, wait_for  # noqa: E402
+from viewer_util import CHART, Setup, wait_for, write_composed  # noqa: E402
 
 
 def active_ids(page):
@@ -112,6 +112,35 @@ def test_page_shows_structure_and_live_state(setup, browser):
     assert requests and all(u.startswith(setup.url) for u in requests), requests
     assert errors == []
     page.close()
+
+
+def test_child_chart_live_inside_its_state(browser, tmp_path):
+    setup = Setup(write_composed(tmp_path))
+    try:
+        page = browser.new_page()
+        errors = []
+        page.on('pageerror', lambda e: errors.append(str(e)))
+        page.goto(setup.url + '/#/demo')
+        expect(page.locator('#diagram .cluster.child-chart[data-id="PROC"]')
+               ).to_be_visible(timeout=15000)
+        outer = page.locator('#diagram [data-id="PROC"] rect').first.bounding_box()
+        for child in ('PROC/STEP1', 'PROC/STEP2', 'PROC/done'):
+            inner = page.locator(f'#diagram [data-id="{child}"]').first.bounding_box()
+            assert outer['x'] <= inner['x'] and outer['y'] <= inner['y'], child
+            assert inner['x'] + inner['width'] <= outer['x'] + outer['width'], child
+            assert inner['y'] + inner['height'] <= outer['y'] + outer['height'], child
+        assert wait_for(lambda: active_ids(page) == {'IDLE'})
+        for event, expected in (('go', {'PROC', 'PROC/STEP1'}),
+                                ('next', {'PROC', 'PROC/STEP2'}),
+                                ('next', {'DONE'})):
+            page.select_option('#send-event', event)
+            page.click('#send-form button')
+            assert wait_for(lambda: active_ids(page) == expected), (event, active_ids(page))
+        expect(page.locator('#log li').first).to_contain_text('done')
+        assert errors == []
+        page.close()
+    finally:
+        setup.close()
 
 
 def test_bag_of_the_patrol_example_replays(browser, tmp_path):

@@ -65,6 +65,7 @@ class StatechartNode(LifecycleNode):
         self.declare_parameter('status_rate_max', 20.0)
         self.declare_parameter('datamodel_publish', Parameter.Type.STRING_ARRAY)
         self.declare_parameter('autostart', True)
+        self.declare_parameter('run_as_action', '')
         self.spec = None
         self.runner = None
         self.host = None
@@ -76,6 +77,8 @@ class StatechartNode(LifecycleNode):
         self._data_json = {}
         self._goal = None
         self.structure = None
+        self._run_server = None
+        self._accepting = False
 
     # --- lifecycle ------------------------------------------------------------------
 
@@ -111,6 +114,7 @@ class StatechartNode(LifecycleNode):
                 kind.setup()
             self._create_introspection()
             self._create_inputs()
+            self._create_run_server()
         except Exception as exc:  # noqa: B902 - any setup failure fails the transition
             self.get_logger().error(f'configuring chart {chart} failed: {exc!r}')
             self._teardown()
@@ -120,6 +124,12 @@ class StatechartNode(LifecycleNode):
         return TransitionCallbackReturn.SUCCESS
 
     def on_activate(self, state):
+        if self._run_server is not None:
+            self._accepting = True
+            self._publish_status(force=True)
+            self.get_logger().info(f'chart {self.spec.name} waits for RunStatechart goals on '
+                                   f'{self.get_parameter("run_as_action").value}')
+            return super().on_activate(state)
         try:
             self.runner.start()
         except Exception as exc:  # noqa: B902
@@ -131,6 +141,7 @@ class StatechartNode(LifecycleNode):
         return super().on_activate(state)
 
     def on_deactivate(self, state):
+        self._accepting = False
         if self.runner is not None:
             self.runner.stop()
             self._publish_status(force=True)
@@ -427,6 +438,92 @@ class StatechartNode(LifecycleNode):
                               execute_callback=execute_callback, goal_callback=goal_callback,
                               cancel_callback=cancel_callback, callback_group=self._group)
         self._keep(lambda s: destroy_waitable(self, s), server)
+
+    # --- the chart as an action (run_as_action) -----------------------------------------
+
+    def _create_run_server(self):
+        name = self.get_parameter('run_as_action').value
+        if not name:
+            return
+        from rclpy.action import ActionServer, CancelResponse, GoalResponse
+        from statechart_ros.loader import load_engine_class, load_chart
+        from statechart_ros_msgs.action import RunStatechart
+        node = self
+        busy = threading.Lock()
+
+        def goal_callback(goal):
+            if not node._accepting or node.runner is None or node.runner.running:
+                return GoalResponse.REJECT
+            if goal.chart and goal.chart not in (node.get_parameter('chart').value,
+                                                 node.spec.path):
+                node.get_logger().warning(f'RunStatechart goal for {goal.chart} rejected: '
+                                          f'this node hosts {node.spec.path}')
+                return GoalResponse.REJECT
+            if goal.data:
+                try:
+                    data = json.loads(goal.data)
+                    if not isinstance(data, dict):
+                        raise ValueError('data is not an object')
+                except ValueError as exc:
+                    node.get_logger().warning(f'RunStatechart goal rejected: {exc}')
+                    return GoalResponse.REJECT
+            return GoalResponse.ACCEPT
+
+        def execute(goal_handle):
+            with busy:
+                return node._run_goal(goal_handle, load_chart, load_engine_class, RunStatechart)
+
+        server = ActionServer(self, RunStatechart, name, execute_callback=execute,
+                              goal_callback=goal_callback,
+                              cancel_callback=lambda _h: CancelResponse.ACCEPT,
+                              callback_group=self._group)
+        self._run_server = server
+        self._keep(lambda s: destroy_waitable(self, s), server)
+
+    def _run_goal(self, goal_handle, load_chart, load_engine_class, action):
+        data = json.loads(goal_handle.request.data) if goal_handle.request.data else {}
+        engine_class = None
+        if data:
+            params = {name: self.get_parameter(name).value for name in self.spec.params
+                      if self.has_parameter(name)}
+            variant = load_chart(self.spec.path, params=dict(params, **data), load_engine=False)
+            engine_class = load_engine_class(variant)
+        changed = threading.Event()
+
+        def on_change():
+            changed.set()
+
+        self.runner.status_observers.append(on_change)
+        result = action.Result()
+        try:
+            self.runner.start(engine_class=engine_class)
+            self._publish_status(force=True)
+            while True:
+                if changed.wait(0.05):
+                    changed.clear()
+                    feedback = action.Feedback()
+                    feedback.status = introspection.status_msg(
+                        self.spec.name, self.runner.snapshot(), dict(self._data_json),
+                        self.host.now())
+                    goal_handle.publish_feedback(feedback)
+                if goal_handle.is_cancel_requested:
+                    self.runner.stop()
+                    self._publish_status(force=True)
+                    goal_handle.canceled()
+                    return result
+                if not self.runner.running:
+                    final, donedata = self.runner.final or ('', {})
+                    result.final_state = final
+                    result.donedata = to_json(donedata) if donedata else ''
+                    self._publish_status(force=True)
+                    if final:
+                        goal_handle.succeed()
+                    else:
+                        goal_handle.abort()
+                    return result
+        finally:
+            if on_change in self.runner.status_observers:
+                self.runner.status_observers.remove(on_change)
 
     def _action_server_progress(self, record):
         """On the worker: feedback for the active goal, and its result on ``result_on``."""

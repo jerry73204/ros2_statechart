@@ -133,6 +133,26 @@ class _OneShot:
             pass
 
 
+class ChildHost:
+    """A child chart's host: the parent's host, with the child's own runner."""
+
+    def __init__(self, parent):
+        self.__dict__['parent'] = parent
+        self.__dict__['runner'] = None
+
+    def __getattr__(self, name):
+        return getattr(self.parent, name)
+
+    def __setattr__(self, name, value):
+        if name == 'runner':
+            self.__dict__['runner'] = value
+        else:
+            setattr(self.parent, name, value)
+
+    def output(self, out, model, runner=None):
+        return self.parent.output(out, model, runner or self.runner)
+
+
 class RosHost(Host):
     """Host of a chart in a ROS node."""
 
@@ -180,9 +200,12 @@ class RosHost(Host):
 
     # --- outputs ----------------------------------------------------------------
 
-    def setup_outputs(self):
+    def setup_outputs(self, spec=None):
         """Create one publisher per topic and one client per service the outputs use."""
-        for outs in self.spec.outputs.values():
+        spec = spec or self.spec
+        self._latched |= {out.attrs['publish'] for outs in spec.outputs.values() for out in outs
+                          if out.action == 'publish' and out.attrs.get('qos') == 'latched'}
+        for outs in spec.outputs.values():
             for out in outs:
                 if out.action == 'publish':
                     topic = out.attrs['publish']
@@ -213,8 +236,8 @@ class RosHost(Host):
         self._publishers.clear()
         self._clients.clear()
 
-    def output(self, out, model):
-        runner = self.runner
+    def output(self, out, model, runner=None):
+        runner = runner or self.runner
         if out.action == 'publish':
             msg_type, pub = self._publishers[out.attrs['publish']]
             msg = msg_type()

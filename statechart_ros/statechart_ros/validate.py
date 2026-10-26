@@ -53,8 +53,8 @@ def schema():
     return _schema
 
 
-def validate(spec, check_types=True, check_model=True):
-    """Return every finding for a loaded ChartSpec, errors first, by line."""
+def validate(spec, check_types=True, check_model=True, _seen=None):
+    """Return every finding for a loaded ChartSpec (and its child charts), errors first."""
     findings = list(spec.findings)
     findings += check_schema(spec)
     findings += check_engine(spec)
@@ -67,6 +67,7 @@ def validate(spec, check_types=True, check_model=True):
     findings += check_params(spec)
     findings += check_restrictions(spec)
     findings += check_expressions(spec)
+    findings += check_children(spec, check_types, check_model, _seen)
     unique = []
     seen = set()
     for f in findings:
@@ -268,6 +269,40 @@ def model_context(spec):
     return context
 
 
+# Child charts ----------------------------------------------------------------------
+
+def check_children(spec, check_types, check_model, seen):
+    """Validate every child chart (ros:chart) as a chart of its own, once."""
+    from statechart_ros.loader import CHILD_PATH, ChartError, load_chart
+    seen = set(seen or ()) | {os.path.abspath(spec.path)}
+    found = []
+    for inv in spec.invokes.values():
+        if inv.kind != 'ros/chart' or not inv.attrs.get(CHILD_PATH):
+            continue
+        path = inv.attrs[CHILD_PATH]
+        if os.path.abspath(path) in seen:
+            found.append(_f(spec, inv.line, 7, f'ros:chart {inv.attrs["src"]}: a chart may not '
+                                               'include itself'))
+            continue
+        try:
+            child = load_chart(path)
+        except (ChartError, OSError) as exc:
+            found.append(_f(spec, inv.line, 1, f'ros:chart {inv.attrs["src"]}: {exc}'))
+            continue
+        for el in child.inputs:
+            message = (f'ros:{el.tag} in a child chart: a child gets its events from its '
+                       'parent (autoforward)')
+            found.append(Finding(child.path, el.line, 7, message))
+        if not inv.kind or not child.states:
+            continue
+        if not any(info.tag == 'final' and info.parent is None
+                   for info in child.states.values()):
+            found.append(_f(spec, inv.line, 5, f'ros:chart {inv.attrs["src"]} has no top-level '
+                                               '<final>: it would never end'))
+        found += validate(child, check_types, check_model, seen)
+    return found
+
+
 # Rule 10 -------------------------------------------------------------------------
 
 def check_expressions(spec):
@@ -296,7 +331,8 @@ def check_statuses(spec):
         kind = kinds_mod.get_kind(inv.kind)
         if kind is None:
             continue
-        statuses = set(kind.statuses)
+        kind_statuses = kind.statuses_for(inv.attrs)
+        statuses = set(kind_statuses)
         covered = set()
         for out in spec.outcomes.get(state, []):
             for status in out.statuses:
@@ -304,10 +340,10 @@ def check_statuses(spec):
                     covered |= statuses
                 elif status not in statuses:
                     found.append(_f(spec, out.line, 5, f'"{status}" is not a status of '
-                                                       f'{inv.kind} ({", ".join(kind.statuses)})'))
+                                                       f'{inv.kind} ({", ".join(kind_statuses)})'))
                 else:
                     covered.add(status)
-        missing = [s for s in kind.statuses if s not in covered]
+        missing = [s for s in kind_statuses if s not in covered]
         if missing:
             found.append(_f(spec, inv.line, 5, f'state "{state}": no ros:outcome for status '
                                                + ', '.join(f'"{s}"' for s in missing)))

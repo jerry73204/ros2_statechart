@@ -92,13 +92,14 @@ class FakeHost(Host):
     def wait(self, event, seconds):
         return event.is_set()
 
-    def output(self, out, model):
+    def output(self, out, model, runner=None):
+        runner = runner or self.runner
         value = out.attrs.get('value')
         if value is not None:
             value = yaml.safe_load(value)
         builder = out.attrs.get('message') or out.attrs.get('request')
         if builder:
-            value = self.runner.call_model(builder, msg=value, request=value)
+            value = runner.call_model(builder, msg=value, request=value)
         target = out.attrs.get(out.action)
         self.outputs.append(Output(out.state, out.when, out.action, target, value))
 
@@ -143,7 +144,7 @@ class FakeKind(InvokeKind):
     def __init__(self, host, state_id, attrs, real, test):
         super().__init__(host, state_id, attrs)
         self.real = real
-        self.statuses = real.statuses if real is not None else ()
+        self.statuses = real.statuses_for(attrs) if real is not None else ()
         self.test = test
 
     def run(self, invocation):
@@ -191,7 +192,8 @@ class _TestRunner(ChartRunner):
     """A runner that knows when every invocation has reached its fake."""
 
     def __init__(self, *args, **kwargs):
-        self._settled = set()
+        # id -> context: holding the context keeps its id from being reused by a new one.
+        self._settled = {}
         self.current_ctx = {}
         super().__init__(*args, **kwargs)
 
@@ -200,14 +202,23 @@ class _TestRunner(ChartRunner):
         return super()._invoke(sid, ctx)
 
     def _invoke_settled(self, ctx):
-        self._settled.add(id(ctx))
+        self._settled[id(ctx)] = ctx
 
     def unsettled(self):
-        """On the worker: invocations the engine started whose fake has not decided."""
+        """
+        On the worker: work not yet done, as a count.
+
+        Invocations the engine started whose fake has not decided, plus one if
+        items wait in the queue. Checked here, not by the test's thread: an
+        invocation is marked settled after its outcome is queued, so an outcome
+        seen as settled here is still in the queue behind this call, while the
+        test's thread could see the queue empty when the worker has taken the
+        outcome and is still processing it.
+        """
+        count = 1 if not self.queue.empty() else 0
         manager = self.sm._engine._invoke_manager if self.sm is not None else None
         if manager is None:
-            return 0
-        count = 0
+            return count
         for inv in list(manager._active.values()):
             if inv.ctx.cancelled.is_set() or inv.terminated:
                 continue
@@ -255,7 +266,7 @@ class ChartTest:
         quiet = 0
         while time.monotonic() < deadline:
             busy = self.runner.run_in_worker(self.runner.unsettled)
-            if busy == 0 and self.runner.queue.empty():
+            if busy == 0:
                 quiet += 1
                 if quiet >= 2:
                     if self.errors:
@@ -281,7 +292,7 @@ class ChartTest:
             raise ChartTestError(f'state {state} has no pending invoke (active: '
                                  f'{self.configuration()})')
         entry = dict(data, status=status)
-        self.runner._settled.discard(id(waiting.ctx))
+        self.runner._settled.pop(id(waiting.ctx), None)
         waiting.entry = entry
         waiting.done.set()
         self.settle()

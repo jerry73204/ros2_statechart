@@ -54,13 +54,15 @@ def post(setup, path, body):
 
 
 def test_charts_are_discovered(setup):
-    charts = wait_for(lambda: [c for c in get_json(setup, '/api/charts') if c['name']])
+    # Only /demo: other tests' chart nodes may share the ROS domain.
+    charts = wait_for(lambda: [c for c in get_json(setup, '/api/charts')
+                               if c['name'] and c['node'] == '/demo'])
     assert charts == [{'node': '/demo', 'name': 'demo', 'source': charts[0]['source'],
                        'debug_events': True, 'running': True}]
 
 
 def test_one_chart_snapshot(setup):
-    snap = wait_for(lambda: (lambda s: s if s['status'] else None)(
+    snap = wait_for(lambda: (lambda s: s if s['status'] and s['structure'] else None)(
         get_json(setup, '/api/chart?node=/demo')))
     states = {s['id']: s for s in snap['structure']['states']}
     assert states['run']['kind'] == 'parallel'

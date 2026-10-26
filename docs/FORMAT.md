@@ -223,15 +223,48 @@ transition of its parent for the same event.
 
 ```xml
 <state id="DOCK_PROCEDURE">
-  <ros:chart src="package://my_robot/charts/dock.scxml"/>
-  <ros:outcome status="succeeded" target="DOCKED"/>
+  <ros:chart src="dock.scxml" autoforward="true"/>
+  <ros:outcome status="docked" target="DOCKED"/>
+  <ros:outcome status="failed" target="RECOVER"/>
 </state>
 ```
 
-`ros:chart` runs another chart in the same node as the state's invoke: it
-starts on entry, is stopped (with all its invokes) on exit, and its final
-state's `donedata` is the outcome. `ros:action` on a `statechart_ros_msgs/action/RunStatechart`
-server runs a chart hosted by another node the same way.
+`ros:chart` is the state's invoke: it runs another chart in the same node.
+
+| Attribute | Meaning |
+|---|---|
+| `src` | the child chart: a path relative to the parent's file, an absolute path or a `package://` URL |
+| `autoforward` | `true`: every event the parent processes while the state is active is also posted to the child (default `false`) |
+
+- **Life.** The child starts on entry to the state, on its own queue and
+  worker, and is stopped on exit the standard way (`sc_ros.stop`): its
+  states are exited, its outputs run their exit side and its invokes are
+  cancelled before the parent's exit completes.
+- **Statuses.** The child's top-level `<final>` ids are the invoke's
+  statuses: reaching `<final id="docked">` ends the invoke with status
+  `docked`, so `ros:outcome status="docked"` routes it and rule 5 checks the
+  outcomes against those ids. The final state's `<donedata>` is the
+  outcome's `result` (guards receive it as `result`) and its event data.
+- **Inputs.** A child chart declares no inputs (`ros:subscribe`,
+  `ros:timer`, `ros:service_server`, `ros:action_server`): it gets events
+  from its parent, through `autoforward`. It may declare its own
+  `ros:model`, `ros:param`/`<data>`, invokes and outputs.
+- **Introspection.** The parent's structure contains the child's states
+  under the invoking state, with qualified ids (`DOCK_PROCEDURE/APPROACH`),
+  and the parent's status lists the child's active states and invokes with
+  the same ids, so `ros2 statechart show`, `echo` and the viewer show the
+  child live inside its parent.
+- **In another node.** A node started with the parameter `run_as_action`
+  (for example `~/run`) does not start its chart on activation: it serves a
+  `statechart_ros_msgs/action/RunStatechart` action there and runs the chart
+  once per goal. The goal's `data` (JSON object) overrides datamodel values
+  by id, feedback is the status, the result holds the final state id and
+  the donedata (JSON). A parent runs it with the ordinary
+  `ros:action server="/dock/run" type="statechart_ros_msgs/action/RunStatechart"`;
+  leaving the parent's state cancels the goal, which stops the child chart
+  and cancels its invokes. The goal's `chart` must be empty or name the
+  node's own chart. The outcome statuses are then those of `ros:action`
+  (`succeeded` when the child reaches a top-level final).
 
 ## 6. Validation (`ros2 statechart validate`)
 
@@ -262,6 +295,8 @@ Errors stop the node from starting and fail CI:
    names except `done.*`, `error.*`, events the chart sends or raises,
    `ros:after` and feedback events, and other inputs' events;
 7. no state has two invokes; no `ros:` element in executable content;
+   no inputs in a child chart and no chart that includes itself (directly
+   or through its children); every child chart passes these rules too;
 8. `ros:param` names match `<data>` ids;
 9. no `<send>` with `delay` or `delayexpr` (use `ros:after`); no `<data>` id
    `state` (the engine's own attribute, ENGINE.md E18), `event`, `source`,
