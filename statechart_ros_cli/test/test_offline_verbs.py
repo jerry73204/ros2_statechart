@@ -78,7 +78,7 @@ def test_validate_reports_a_missing_model():
 
 
 @pytest.mark.parametrize('fmt, marker', [
-    ('mermaid', 'stateDiagram-v2'), ('dot', 'digraph statechart'), ('md', '| Source |')])
+    ('mermaid', 'flowchart TB'), ('dot', 'digraph statechart'), ('md', '| Source |')])
 def test_diagram_text_formats(fmt, marker):
     result = ros2('diagram', README, '-f', fmt)
     assert result.returncode == 0, result.stderr

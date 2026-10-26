@@ -53,62 +53,95 @@ def _edge_label(t):
     return label
 
 
-_MERMAID_ENTITIES = {':': '#58;', ';': '#59;', '"': '#quot;'}
+_MERMAID_ENTITIES = {'"': '#quot;', '<': '#lt;', '>': '#gt;', '|': '#124;', '#': '#35;'}
 
 
 def _mermaid_text(text):
-    return re.sub(r'[:;"]', lambda m: _MERMAID_ENTITIES[m.group(0)], text)
+    return re.sub(r'["<>|#]', lambda m: _MERMAID_ENTITIES[m.group(0)], str(text))
+
+
+_MERMAID_WORDS = {'end', 'graph', 'subgraph', 'flowchart', 'direction', 'style', 'class',
+                  'classdef', 'click', 'linkstyle', 'init', 'default'}
+
+
+def _mermaid_ids(states):
+    """Node ids: the state id where Mermaid accepts it, else a variant of it."""
+    ids, used = {}, set()
+    for sid in states:
+        nid = re.sub(r'\W', '_', sid)
+        if nid.lower() in _MERMAID_WORDS or nid.lower().endswith('_init') or nid in used:
+            nid += f'_{len(used)}'
+        ids[sid] = nid
+        used.add(nid)
+    return ids
 
 
 def mermaid(structure):
-    """Return a Mermaid stateDiagram-v2."""
+    """
+    Return a Mermaid flowchart: a subgraph per compound or parallel state.
+
+    A flowchart, not a stateDiagram: Mermaid's state diagrams cannot draw a
+    transition that crosses a composite state's border (their layout then
+    moves states out of their parents), and a statechart has many such
+    transitions; flowchart subgraphs keep every state inside its parent.
+    """
     states = _states(structure)
-    lines = ['stateDiagram-v2']
     by_parent = {}
     for s in structure['states']:
         by_parent.setdefault(s['parent'], []).append(s)
-    by_source = {}
-    for t in structure['transitions']:
-        by_source.setdefault(t['source'], []).append(t)
+    ids = _mermaid_ids(states)
+    lines = ['flowchart TB',
+             '  classDef start fill:#333,stroke:#333',
+             '  classDef history fill:#fff,stroke:#333']
+
+    def label(state, title):
+        text = f'<b>{_mermaid_text(title)}</b>'
+        for note in _annotations(state):
+            text += f'<br/><small>{_mermaid_text(note)}</small>'
+        return text
+
+    def start(owner, initials, pad):
+        dot = f'{ids[owner]}_init' if owner else 'init'
+        lines.append(f'{pad}{dot}(( )):::start')
+        for init in initials:
+            lines.append(f'{pad}{dot} --> {ids[init]}')
 
     def emit(state, indent):
         pad = '  ' * indent
-        kind = state['kind']
+        sid, kind, nid = state['id'], state['kind'], ids[state['id']]
         if kind == 'history':
-            lines.append(f"{pad}state \"H{'*' if state['history'] == 'deep' else ''}\" as "
-                         f"{state['id']}")
+            text = 'H*' if state['history'] == 'deep' else 'H'
+            lines.append(f'{pad}{nid}(("{text}")):::history')
             return
-        children = by_parent.get(state['id'], [])
+        children = by_parent.get(sid, [])
         if children:
-            lines.append(f"{pad}state {state['id']} {{")
+            title = sid + (' (parallel)' if kind == 'parallel' else '')
+            lines.append(f'{pad}subgraph {nid}["{label(state, title)}"]')
+            lines.append(f'{pad}  direction TB')
+            if kind != 'parallel':
+                start(sid, state['initial'], pad + '  ')
+            for child in children:
+                emit(child, indent + 1)
+            lines.append(f'{pad}end')
             if kind == 'parallel':
-                for i, child in enumerate(children):
-                    if i:
-                        lines.append(f'{pad}  --')
-                    emit(child, indent + 1)
-            else:
-                for init in state['initial']:
-                    lines.append(f'{pad}  [*] --> {init}')
-                for child in children:
-                    emit(child, indent + 1)
-            lines.append(f'{pad}}}')
-        else:
-            lines.append(f"{pad}state {state['id']}")
-        if kind == 'final':
-            lines.append(f"{pad}{state['id']} --> [*]")
-        for note in _annotations(state):
-            lines.append(f"{pad}note right of {state['id']} : {_mermaid_text(note)}")
+                lines.append(f'{pad}style {nid} stroke-dasharray: 5 5')
+            return
+        shape = ('((("', '")))') if kind == 'final' else ('("', '")')
+        lines.append(f'{pad}{nid}{shape[0]}{label(state, sid)}{shape[1]}')
 
-    for init in structure['initial']:
-        lines.append(f'  [*] --> {init}')
     for state in by_parent.get('', []):
         emit(state, 1)
+    start('', structure['initial'], '  ')
     for t in structure['transitions']:
         if not t['targets'] or t['source'] not in states:
             continue
+        arrow = '==>' if t['origin'] == 'outcome' else '-->'
+        text = _edge_label(t)
         for target in t['targets']:
-            label = _mermaid_text(_edge_label(t))
-            lines.append(f"  {t['source']} --> {target}" + (f' : {label}' if label else ''))
+            if target not in ids:
+                continue
+            edge = f'{arrow}|"{_mermaid_text(text)}"|' if text else arrow
+            lines.append(f"  {ids[t['source']]} {edge} {ids[target]}")
     return '\n'.join(lines) + '\n'
 
 
@@ -146,13 +179,15 @@ def graphviz(structure):
             label += ''.join('\\n' + _dot_text(n) for n in notes)
             lines.append(f'{pad}  label="{label}"; style={style};')
             lines.append(f'{pad}  {anchor(sid)} [shape=point, style=invis, width=0];')
+            for child in by_parent[sid]:
+                emit(child, indent + 1)
+            # After the children: an edge names its nodes, and a node belongs to
+            # the cluster it is first named in.
             if state['kind'] != 'parallel':
                 for init in state['initial']:
                     lines.append(f'{pad}  {_dot_id(sid + "#init")} [shape=point, width=0.1];')
                     lines.append(f'{pad}  {_dot_id(sid + "#init")} -> {anchor(init)}'
                                  + _lhead(init, by_parent) + ';')
-            for child in by_parent[sid]:
-                emit(child, indent + 1)
             lines.append(f'{pad}}}')
             return
         if state['kind'] == 'history':
@@ -170,14 +205,25 @@ def graphviz(structure):
     for init in structure['initial']:
         lines.append('  "#init" [shape=point, width=0.15];')
         lines.append(f'  "#init" -> {anchor(init)}' + _lhead(init, by_parent) + ';')
+
+    def inside(sid, ancestor):
+        while sid:
+            sid = states[sid]['parent'] if sid in states else ''
+            if sid == ancestor:
+                return True
+        return False
+
     for t in structure['transitions']:
         if not t['targets'] or t['source'] not in states:
             continue
         for target in t['targets']:
+            source = t['source']
             attrs = [f'label="{_dot_text(_edge_label(t))}"']
-            if by_parent.get(t['source']):
-                attrs.append(f'ltail={_dot_id("cluster_" + t["source"])}')
-            if by_parent.get(target):
+            # Clip an edge at a cluster's border only when the other end is
+            # outside it: dot cannot clip at a cluster that holds both ends.
+            if by_parent.get(source) and target != source and not inside(target, source):
+                attrs.append(f'ltail={_dot_id("cluster_" + source)}')
+            if by_parent.get(target) and target != source and not inside(source, target):
                 attrs.append(f'lhead={_dot_id("cluster_" + target)}')
             if t['origin'] == 'outcome':
                 attrs.append('style=bold')
