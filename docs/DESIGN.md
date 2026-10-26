@@ -150,8 +150,10 @@ of a run contains the whole history of the chart.
   analysing a run after the fact.
 
 The page is static files plus a small HTTP and server-sent-events endpoint in
-the node: no rosbridge and no build tools on the robot. A Foxglove panel can
-reuse the page's components later.
+the node: no rosbridge and no build tools on the robot. The layout is dagre
+(MIT, vendored with its licences); the page loads nothing from outside the
+viewer. A Foxglove panel can reuse the page's components later. Guide:
+[VIEWER.md](VIEWER.md).
 
 ## 7. Command line: `ros2 statechart`
 

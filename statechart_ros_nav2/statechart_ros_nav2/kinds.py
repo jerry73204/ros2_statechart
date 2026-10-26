@@ -70,7 +70,10 @@ class Nav2ActionKind(ActionKind):
 
     @classmethod
     def summary(cls, attrs):
-        return {'target': attrs.get('server', cls.server),
+        what = attrs.get('pose') or attrs.get('poses') or attrs.get('dock_id') or \
+            attrs.get('dock_pose')
+        server = attrs.get('server', cls.server)
+        return {'target': f'{server} {what}' if what else server,
                 'type': f'nav2_msgs/action/{cls.action}'}
 
     def __init__(self, host, state_id, attrs):

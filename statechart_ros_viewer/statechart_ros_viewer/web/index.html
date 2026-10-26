@@ -1,0 +1,63 @@
+<!doctype html>
+<!-- Copyright 2026 The ros2_statechart Authors. SPDX-License-Identifier: Apache-2.0 -->
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Statechart viewer</title>
+  <link rel="stylesheet" href="/static/style.css">
+</head>
+<body>
+  <header>
+    <h1>Statecharts</h1>
+    <label>Chart
+      <select id="chart-select" aria-label="chart"></select>
+    </label>
+    <span id="chart-source" class="muted"></span>
+    <span id="connection" class="pill off">offline</span>
+  </header>
+  <main>
+    <section id="diagram-pane">
+      <div id="past-banner" hidden>
+        Showing the configuration after <strong id="past-event"></strong>
+        at <span id="past-time"></span>.
+        <button id="live-button" type="button">Back to live</button>
+      </div>
+      <svg id="diagram" role="img" aria-label="chart diagram"></svg>
+      <p id="empty" class="muted">Waiting for a chart: start a statechart node, or play a bag
+        that contains its <code>~/structure</code>, <code>~/status</code> and
+        <code>~/transitions</code> topics.</p>
+    </section>
+    <aside>
+      <section>
+        <h2>Active</h2>
+        <p id="last-event" class="muted"></p>
+        <ul id="active-list" class="compact"></ul>
+      </section>
+      <section>
+        <h2>Running work</h2>
+        <ul id="invokes" class="compact"></ul>
+      </section>
+      <section>
+        <h2>Data</h2>
+        <table id="data"></table>
+      </section>
+      <section id="send-section" hidden>
+        <h2>Send an event</h2>
+        <form id="send-form">
+          <select id="send-event" aria-label="event"></select>
+          <input id="send-data" placeholder='data, e.g. {"percentage": 0.2}' aria-label="data">
+          <button type="submit">Send</button>
+        </form>
+        <p id="send-answer" class="muted"></p>
+      </section>
+      <section class="grow">
+        <h2>Transitions</h2>
+        <ol id="log" reversed></ol>
+      </section>
+    </aside>
+  </main>
+  <script src="/static/vendor/dagre.min.js"></script>
+  <script src="/static/app.js"></script>
+</body>
+</html>

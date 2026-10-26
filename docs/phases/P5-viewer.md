@@ -20,7 +20,9 @@ from a terminal, on a robot or from a bag.
 ## Checks
 
 - Viewer tested headless (page loads, receives a structure and a status,
-  highlights the right states) in CI.
+  highlights the right states) in CI: Playwright with Chromium, in its own
+  CI job (`statechart_ros_viewer/test_browser/`); the HTTP API and event
+  stream are also tested without a browser in every distribution's job.
 - A recorded bag of the P3 example replays in the viewer with correct
   highlighting.
 - The page works offline on the robot's network (no external assets).

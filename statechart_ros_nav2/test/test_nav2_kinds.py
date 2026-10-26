@@ -176,7 +176,7 @@ def test_feedback_is_summarised_in_the_status(env, tmp_path, poses_file):
                                 for inv in h.node.runner.snapshot()['invokes']))
     inv = h.node.runner.snapshot()['invokes'][0]
     assert (inv['state'], inv['kind'], inv['target']) == ('b', 'nav2/navigate_to_pose',
-                                                          'navigate_to_pose')
+                                                          'navigate_to_pose wp_a')
 
 
 def test_leaving_cancels_the_nav2_goal(env, tmp_path, poses_file):

@@ -58,3 +58,39 @@ jobs:
                 "return-code-on-test-failure": true
               }
             }
+
+  viewer-browser:
+    name: viewer in a headless browser (jazzy)
+    runs-on: ubuntu-24.04
+    container:
+      image: ubuntu:noble
+    timeout-minutes: 30
+    defaults:
+      run:
+        shell: bash
+    steps:
+      - uses: ros-tooling/setup-ros@0.7.19
+        with:
+          required-ros-distributions: jazzy
+      - uses: actions/checkout@v7.0.1
+        with:
+          path: ws/src/ros2_statechart
+      - name: Install dependencies
+        run: |
+          apt-get update
+          source /opt/ros/jazzy/setup.bash
+          rosdep update
+          rosdep install -y --from-paths ws/src --ignore-src --rosdistro jazzy
+          apt-get install -y ros-jazzy-rosbag2 ros-jazzy-rosbag2-storage-mcap
+          pip3 install --break-system-packages playwright==1.64.1
+          playwright install --with-deps chromium
+      - name: Build
+        run: |
+          source /opt/ros/jazzy/setup.bash
+          cd ws
+          colcon build --event-handlers console_cohesion+
+      - name: Viewer tests in Chromium
+        run: |
+          source ws/install/setup.bash
+          cd ws/src/ros2_statechart/statechart_ros_viewer
+          python3 -m pytest -v -p no:cacheprovider test_browser/browser_viewer.py

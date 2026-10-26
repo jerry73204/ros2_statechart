@@ -43,6 +43,10 @@ setup(
             'validate = statechart_ros_cli.verb.validate:ValidateVerb',
             'diagram = statechart_ros_cli.verb.diagram:DiagramVerb',
             'export = statechart_ros_cli.verb.export:ExportVerb',
+            'list = statechart_ros_cli.verb.list:ListVerb',
+            'show = statechart_ros_cli.verb.show:ShowVerb',
+            'echo = statechart_ros_cli.verb.echo:EchoVerb',
+            'send = statechart_ros_cli.verb.send:SendVerb',
         ],
     },
 )

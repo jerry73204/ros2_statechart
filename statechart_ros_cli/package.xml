@@ -12,6 +12,8 @@
   <exec_depend>ros2cli</exec_depend>
   <exec_depend>statechart_ros</exec_depend>
   <exec_depend>graphviz</exec_depend>
+  <exec_depend>rclpy</exec_depend>
+  <exec_depend>statechart_ros_msgs</exec_depend>
 
   <test_depend>ament_copyright</test_depend>
   <test_depend>ament_flake8</test_depend>
@@ -19,6 +21,7 @@
   <test_depend>nav2_msgs</test_depend>
   <test_depend>python3-lxml</test_depend>
   <test_depend>std_msgs</test_depend>
+  <test_depend>statechart_ros</test_depend>
   <test_depend>python3-pytest</test_depend>
 
   <export>
