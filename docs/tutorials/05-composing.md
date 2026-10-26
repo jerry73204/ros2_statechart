@@ -189,6 +189,13 @@ ros2 run statechart_ros statechart_node --ros-args -r __node:=square_server \
   -p run_as_action:=~/run
 ```
 
+The node is active, and its chart waits for a goal:
+
+<!-- check: run expect "[not running]" within 30 -->
+```bash
+ros2 statechart show /square_server
+```
+
 The parent runs it with an ordinary `ros:action`
 (`statechart_ros/examples/tutorial/shapes_remote.scxml`):
 
