@@ -2,6 +2,10 @@
 Changelog for package statechart_ros_testing
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+0.1.4 (2026-10-27)
+------------------
+* No changes; released with statechart_ros_viewer 0.1.4.
+
 0.1.3 (2026-10-27)
 ------------------
 * A ``message=`` or ``request=`` builder of an output gets a message of the declared type, filled from ``value=``, as on the robot (it got ``None``, so the output failed and was not recorded); the recorded value takes ``value=``'s form.
