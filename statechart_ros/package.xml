@@ -20,6 +20,10 @@
   <exec_depend>lifecycle_msgs</exec_depend>
   <exec_depend>rcl_interfaces</exec_depend>
   <exec_depend>python3-yaml</exec_depend>
+  <exec_depend>launch</exec_depend>
+  <exec_depend>launch_ros</exec_depend>
+  <!-- The turtlesim example also needs turtlesim (in ros-jazzy-desktop), not
+       declared here so that the node does not pull in Qt. -->
 
   <test_depend>ament_copyright</test_depend>
   <test_depend>ament_flake8</test_depend>
@@ -33,6 +37,7 @@
   <test_depend>launch_ros</test_depend>
   <test_depend>launch_testing</test_depend>
   <test_depend>launch_testing_ros</test_depend>
+  <test_depend>geometry_msgs</test_depend>
   <test_depend>turtlesim</test_depend>
 
   <export>

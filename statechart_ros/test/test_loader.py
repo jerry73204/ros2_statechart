@@ -34,7 +34,22 @@ def test_well_formed_chart_loads_into_an_engine_class():
     assert spec.engine_class is not None
     sm = spec.engine_class()
     sm.send('go')
-    assert set(sm.configuration_values) == {'b'}
+    assert set(sm.configuration_values) == {'sc_ros_root', 'b'}
+
+
+def test_the_engine_document_wraps_the_states_so_the_node_can_stop_the_chart():
+    spec = spec_of('<state id="a"><onexit><assign location="left" expr="True"/></onexit>'
+                   '<transition event="go" target="f"/></state><final id="f"/>'
+                   '<datamodel><data id="left" expr="False"/></datamodel>')
+    sm = spec.engine_class()
+    sm.send('sc_ros.stop')
+    assert set(sm.configuration_values) == {'sc_ros_stopped'}
+    assert sm.model.left is True
+    assert sm.is_terminated
+    sm = spec.engine_class()
+    sm.send('go')
+    assert set(sm.configuration_values) == {'sc_ros_stopped'}
+    assert 'sc_ros_root' not in spec.plain_doc
 
 
 def test_not_well_formed_xml_is_a_chart_error():

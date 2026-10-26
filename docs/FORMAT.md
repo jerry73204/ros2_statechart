@@ -81,10 +81,19 @@ The package provides a generic `statechart_ros_msgs/srv/SendEvent`
 gets them through the `reply` builder.
 
 **Action servers.** A chart that accepts long tasks (a mission accepting
-jobs) declares one: the goal becomes an event, feedback is built from the
-chart's state on every change, and the result is sent when `result_on` occurs
-(typically `done.state.<task>`). The chart decides when a goal is refused
-(`accept`) and what a cancel means (`cancel_event`).
+jobs) declares one: the goal becomes an event (data `goal`), feedback is
+built after every processed event, and the result is sent when a transition
+on `result_on` is taken (typically `done.state.<task>`). The chart decides
+when a goal is refused (`accept`, or a goal event that is not handled, which
+aborts the goal) and what a cancel means (`cancel_event`; without one,
+cancel requests are rejected). One goal runs at a time; another is rejected
+while it runs.
+
+**Event data.** A subscription's event carries `msg`, a service request's
+`request`, an action goal's `goal`; builders named in `data` add entries.
+The names the engine passes itself (`event`, `machine`, `model`, `state`,
+`source`, `target`, `transition`, `event_data`, `error`) cannot be event
+data. Guards (`when`, `accept`) and builders run on the worker.
 
 ## 4. What a state does (children of `<state>`, `<parallel>`, `<final>`)
 
@@ -99,7 +108,12 @@ Started on entry, cancelled on exit, started again on re-entry.
 | `ros:wait_for` | `topic`, `type`, optional `when` (guard), `timeout` | `succeeded`, `timeout` |
 | `ros:invoke` | `kind` (`package/name`, from an entry point), any attributes the kind declares | declared by the kind |
 
-**Builders and handlers.** The node calls them with what they need:
+**Builders and handlers.** The node calls them with what they need, by
+argument name: a method receives those of `goal`, `request`, `response`,
+`feedback`, `msg`, `datamodel` (and, for outcome guards, `status`, `result`,
+`error_code`, `error_name`, `error_msg`) that its signature names. Every
+model method runs on the node's worker thread, never concurrently with the
+engine or with another model method, so models need no locks:
 
 ```python
 class Mission:

@@ -95,7 +95,21 @@ trees, a docking server's states) remains theirs.
 - **Lifecycle.** The node is a managed (lifecycle) node:
   configure loads and validates the chart, activate starts it, deactivate
   exits all states (cancelling every invoke), cleanup drops it. A Nav2-style
-  lifecycle manager or a launch file brings it up in order.
+  lifecycle manager or a launch file brings it up in order; with the
+  parameter `autostart` (default true) the node configures and activates
+  itself. To exit every state the standard way (exit actions, outputs,
+  invokes), the loader wraps the chart's states in one compound state
+  `sc_ros_root` with a transition to a final `sc_ros_stopped` on the event
+  `sc_ros.stop`; the engine's own `stop()` would only cancel invokes. The
+  chart's own top-level `<final>` ends there too, through
+  `done.state.sc_ros_root`, and its donedata is kept as the run's result.
+- **Parameters.** `chart` (path or `package://`), `autostart`,
+  `debug_events`, `status_rate_max` (Hz, default 20; status changes in
+  between are coalesced), `datamodel_publish` (names of datamodel values in
+  the status), and one parameter per `ros:param`.
+- **Testing without ROS.** The queue, worker, listener, invokes and outputs
+  are one class, `ChartRunner`, which talks to ROS only through a host
+  object; the node gives it a ROS host, tests a fake one.
 
 ## 5. Introspection
 

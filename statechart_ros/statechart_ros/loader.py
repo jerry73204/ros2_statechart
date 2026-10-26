@@ -32,9 +32,9 @@ import re
 
 from lxml import etree
 from statechart_ros import kinds as kinds_mod
-from statechart_ros.builtin_invokes import QOS_CHOICES
 from statechart_ros.kinds import (
-    Attr, BUILDER, DATA, ENUM, EVENT, FLOAT, GUARD, MSG_TYPE, NAME, SRV_TYPE, STRING)
+    Attr, BUILDER, DATA, ENUM, EVENT, FLOAT, GUARD, MSG_TYPE, NAME, QOS_CHOICES, SRV_TYPE,
+    STRING)
 
 ROS_NS = 'https://github.com/jerry73204/ros2_statechart/ns/1'
 SCXML_NS = 'http://www.w3.org/2005/07/scxml'
@@ -658,6 +658,7 @@ def _expand(spec, root, params):
         if name in params:
             _set_data(engine, name, repr(params[name]))
     plain = copy.deepcopy(engine)
+    _wrap(engine, spec.initial)
     for state, afters in spec.afters.items():
         el = plain.find(f'.//*[@id="{state}"]')
         if el is None:
@@ -675,6 +676,41 @@ def _expand(spec, root, params):
         el.insert(pos, onexit)
         el.insert(pos, onentry)
     return engine, plain
+
+
+ROOT = PREFIX + 'root'
+STOPPED = PREFIX + 'stopped'
+STOP_EVENT = 'sc_ros.stop'
+
+
+def _wrap(root, initial):
+    """
+    Put the chart's states in one compound state the node can leave.
+
+    The node stops a chart by sending ``sc_ros.stop``: the engine then exits
+    every state the standard way (exit actions, outputs, invokes cancelled),
+    which ``engine.stop()`` would not do. A top-level ``<final>`` of the chart
+    ends in the same place through ``done.state.sc_ros_root``.
+    """
+    wrapper = etree.Element(_q('state'))
+    wrapper.set('id', ROOT)
+    if initial:
+        wrapper.set('initial', ' '.join(initial))
+    first = None
+    for child in list(root):
+        if isinstance(child.tag, str) and is_scxml(child) and local(child.tag) in STATE_TAGS:
+            if first is None:
+                first = root.index(child)
+            wrapper.append(child)
+    for event in (STOP_EVENT, f'done.state.{ROOT}'):
+        tr = etree.SubElement(wrapper, _q('transition'))
+        tr.set('event', event)
+        tr.set('target', STOPPED)
+    stopped = etree.Element(_q('final'))
+    stopped.set('id', STOPPED)
+    root.insert(first if first is not None else len(root), stopped)
+    root.insert(first if first is not None else len(root), wrapper)
+    root.set('initial', ROOT)
 
 
 def _first_content_index(el):

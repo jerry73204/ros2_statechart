@@ -7,7 +7,7 @@ publishes on entry, which topics and services turn into events. The chart is
 run by [python-statemachine](https://github.com/fgmacedo/python-statemachine),
 used as released, inside one ROS 2 node.
 
-Status: in development. Done: P0 (engine pinned by tests), P1 (loader, validator, `validate` / `diagram` / `export`); see [docs/phases](docs/phases/).
+Status: in development. Done: P0 (engine pinned by tests), P1 (loader, validator, `validate` / `diagram` / `export`), P2 (`statechart_node`, turtlesim example); see [docs/phases](docs/phases/).
 
 ## Why statecharts
 

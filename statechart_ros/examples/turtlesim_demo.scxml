@@ -1,0 +1,48 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- Drive turtlesim with a chart: on "go", turn east (an action), drive until the
+     pose passes x = 7 (a wait for a topic), then teleport home (a service call).
+     "stop" ends a run from any of its states; the turtle's goal is cancelled. -->
+<scxml xmlns="http://www.w3.org/2005/07/scxml"
+       xmlns:ros="https://github.com/jerry73204/ros2_statechart/ns/1"
+       version="1.0" datamodel="python" initial="IDLE" name="turtle_demo">
+
+  <ros:model class="statechart_ros.examples.turtlesim_demo:TurtleDemo"/>
+  <ros:service_server name="~/command" type="statechart_ros_msgs/srv/SendEvent"/>
+
+  <datamodel>
+    <data id="laps" expr="0"/>
+  </datamodel>
+
+  <state id="IDLE">
+    <transition event="go" target="RUN"/>
+    <ros:ignore event="stop" reason="already idle"/>
+  </state>
+
+  <state id="RUN" initial="TURN">
+    <transition event="stop" target="IDLE"/>
+    <ros:refuse event="go" reason="a run is in progress"/>
+
+    <state id="TURN">
+      <ros:action server="turtle1/rotate_absolute" type="turtlesim/action/RotateAbsolute"
+                  goal="face_east"/>
+      <ros:outcome status="succeeded" target="DRIVE"/>
+      <ros:outcome status="*" target="IDLE"/>
+    </state>
+
+    <state id="DRIVE">
+      <ros:on_entry publish="turtle1/cmd_vel" type="geometry_msgs/msg/Twist"
+                    value="{linear: {x: 2.0}}"/>
+      <ros:wait_for topic="turtle1/pose" type="turtlesim/msg/Pose" when="far_enough"
+                    timeout="5"/>
+      <ros:outcome status="succeeded" target="HOME"/>
+      <ros:outcome status="timeout" target="IDLE"/>
+    </state>
+
+    <state id="HOME">
+      <onentry><assign location="laps" expr="laps + 1"/></onentry>
+      <ros:service_call service="turtle1/teleport_absolute"
+                        type="turtlesim/srv/TeleportAbsolute" request="home"/>
+      <ros:outcome status="*" target="IDLE"/>
+    </state>
+  </state>
+</scxml>

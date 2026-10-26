@@ -48,6 +48,7 @@ DATA = 'data'                # the name of a datamodel value
 ENUM = 'enum'
 PATH = 'path'                # a file path or package:// URL
 
+QOS_CHOICES = ('default', 'sensor', 'latched')
 MODEL_ROLES = (BUILDER, HANDLER, GUARD)
 TYPE_ROLES = {MSG_TYPE: 'msg', SRV_TYPE: 'srv', ACTION_TYPE: 'action'}
 
