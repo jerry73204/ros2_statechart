@@ -460,9 +460,11 @@ class ChartRunner:
         source = self.configuration()
         start = time.monotonic()
         self.sm.send(event, **data)
-        refusal = self.model.__dict__.get(REFUSAL_VAR, '')
-        ignored = self.model.__dict__.get(IGNORE_VAR, '')
-        handled = any(not t['refusal'] for t in self._taken if t['event'] == event)
+        own = [t for t in self._taken if t['event'] == event]
+        handled = any(not t['refusal'] for t in own)
+        refusal = '' if handled else next((t['reason'] for t in own if t['refusal']), '')
+        # ignored: what the event did was only ros:ignore, nothing else
+        ignored = (own[0]['reason'] if own and all(t['ignore'] for t in own) else '')
         if not handled and not refusal and event != STOP_EVENT:
             self.log.warning(f'event "{event}" was not handled in configuration '
                              f'{{{", ".join(source)}}}')
@@ -538,8 +540,18 @@ class ChartRunner:
             if source.startswith(PREFIX):
                 return
             targets = [t.id for t in (transition.targets or [])] if transition else []
-            refusal = (not targets and (source, str(event)) in runner._refusal_keys)
-            runner._taken.append({'event': str(event), 'refusal': refusal,
+            key = (source, str(event))
+            refusal = not targets and key in runner._refusal_keys
+            ignore = not targets and not refusal and key in runner._ignore_keys
+            # The reason this transition's own <assign> just set: an event raised
+            # later in the same macrostep must not be credited to the one sent.
+            reason = ''
+            if refusal or ignore:
+                var = REFUSAL_VAR if refusal else IGNORE_VAR
+                reason = runner.model.__dict__.get(var, '')
+                runner.model.__dict__[var] = ''
+            runner._taken.append({'event': str(event), 'refusal': refusal, 'ignore': ignore,
+                                  'reason': reason,
                                   'label': f'{source} -> {", ".join(targets)}'.rstrip()})
 
         def on_exit_state(self, state=None, **kwargs):
@@ -571,6 +583,8 @@ class ChartRunner:
         # A refusal may name several events (event="pause resume"): one key each
         self._refusal_keys = {(r.state, event) for rs in self.spec.refusals.values()
                               for r in rs if not r.ignore for event in r.event.split()}
+        self._ignore_keys = {(r.state, event) for rs in self.spec.refusals.values()
+                             for r in rs if r.ignore for event in r.event.split()}
         self._last_final = None
         return type('StatechartListener', (), methods)()
 
