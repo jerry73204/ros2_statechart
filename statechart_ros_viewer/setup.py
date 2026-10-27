@@ -18,7 +18,7 @@ package_name = 'statechart_ros_viewer'
 
 setup(
     name=package_name,
-    version='0.1.4',
+    version='0.1.5',
     packages=find_packages(exclude=['test']),
     package_data={package_name: ['web/*.html', 'web/*.js', 'web/*.css', 'web/vendor/*']},
     data_files=[

@@ -2,8 +2,8 @@
 Changelog for package statechart_ros
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Forthcoming
------------
+0.1.5 (2026-10-27)
+------------------
 * An event's refusal and ignore reasons are its own: an event raised later in the same macrostep and refused or ignored there no longer marks the sent event refused or ignored (``done.invoke`` events that moved the chart on were logged as ignored, and a refused raised event could report the sent one refused).
 
 0.1.4 (2026-10-27)

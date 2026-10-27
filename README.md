@@ -7,7 +7,7 @@ publishes on entry, which topics and services turn into events. The chart is
 run by [python-statemachine](https://github.com/fgmacedo/python-statemachine),
 used as released, inside one ROS 2 node.
 
-Status: 0.1.4, every phase of [docs/phases](docs/phases/) done (P0 to P7). Start with the [tutorials](docs/tutorials/README.md); until the packages reach the ROS apt repositories, install the Debian packages attached to each [release](https://github.com/jerry73204/ros2_statechart/releases) (Humble and Jazzy, amd64 and arm64: `sudo apt install ./ros-<distro>-*_<arch>.deb`) or build from source ([docs/RELEASE.md](docs/RELEASE.md)).
+Status: 0.1.5, every phase of [docs/phases](docs/phases/) done (P0 to P7). Start with the [tutorials](docs/tutorials/README.md); until the packages reach the ROS apt repositories, install the Debian packages attached to each [release](https://github.com/jerry73204/ros2_statechart/releases) (Humble and Jazzy, amd64 and arm64: `sudo apt install ./ros-<distro>-*_<arch>.deb`) or build from source ([docs/RELEASE.md](docs/RELEASE.md)).
 
 ## Why statecharts
 
