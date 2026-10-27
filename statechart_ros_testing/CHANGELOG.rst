@@ -2,6 +2,10 @@
 Changelog for package statechart_ros_testing
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+0.1.6 (2026-10-28)
+------------------
+* No changes; released with statechart_ros 0.1.6.
+
 0.1.5 (2026-10-27)
 ------------------
 * No changes; released with statechart_ros 0.1.5.

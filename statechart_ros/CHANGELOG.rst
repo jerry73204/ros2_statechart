@@ -2,8 +2,8 @@
 Changelog for package statechart_ros
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Forthcoming
------------
+0.1.6 (2026-10-28)
+------------------
 * A refusal again follows the events an event raises, as before 0.1.5: a router that forwards a service request by raising answers with the refusal of what it raised (0.1.5 answered "accepted"). An ignore still counts only for the event that took it.
 
 0.1.5 (2026-10-27)

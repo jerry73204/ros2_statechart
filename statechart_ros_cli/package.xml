@@ -2,7 +2,7 @@
 <?xml-model href="http://download.ros.org/schema/package_format3.xsd" schematypens="http://www.w3.org/2001/XMLSchema"?>
 <package format="3">
   <name>statechart_ros_cli</name>
-  <version>0.1.5</version>
+  <version>0.1.6</version>
   <description>ros2 statechart verbs: validate, diagram, export, list, show, echo, send.</description>
   <maintainer email="jerry73204@gmail.com">jerry73204</maintainer>
   <license>Apache-2.0</license>
