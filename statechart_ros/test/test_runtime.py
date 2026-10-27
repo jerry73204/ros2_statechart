@@ -110,20 +110,24 @@ def test_events_answers_handled_refused_ignored_unhandled():
         runner.shutdown()
 
 
-def test_an_event_reports_only_its_own_refusal_or_ignore():
-    # go moves a -> b; b's entry raises noise and halt, which the root state
-    # ignores and refuses. go itself was neither.
+def test_an_ignore_is_the_events_own_and_a_refusal_follows_raised_events():
+    # go moves a -> b; b's entry raises noise, which the root ignores: go was not
+    # ignored. cmd is a router: it raises halt, which the root refuses, so cmd's
+    # answer is that refusal (a service that forwards a request answers so).
     runner, _ = runner_of(
         '<state id="top" initial="a">'
         '<ros:ignore event="noise" reason="background"/>'
         '<ros:refuse event="halt" reason="nothing to halt"/>'
+        '<transition event="cmd"><raise event="halt"/></transition>'
         '<state id="a"><transition event="go" target="b"/></state>'
-        '<state id="b"><onentry><raise event="noise"/><raise event="halt"/></onentry>'
+        '<state id="b"><onentry><raise event="noise"/></onentry>'
         '<transition event="back" target="a"/></state></state>', initial='top')
     try:
         result = runner.send('go')
         assert (result.handled, result.refusal, result.ignored) == (True, '', '')
         assert result.configuration == ['top', 'b']
+        result = runner.send('cmd')
+        assert (result.handled, result.refusal, result.ignored) == (True, 'nothing to halt', '')
         result = runner.send('noise')
         assert (result.handled, result.refusal, result.ignored) == (True, '', 'background')
         result = runner.send('halt')

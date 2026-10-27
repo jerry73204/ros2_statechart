@@ -462,8 +462,12 @@ class ChartRunner:
         self.sm.send(event, **data)
         own = [t for t in self._taken if t['event'] == event]
         handled = any(not t['refusal'] for t in own)
-        refusal = '' if handled else next((t['reason'] for t in own if t['refusal']), '')
-        # ignored: what the event did was only ros:ignore, nothing else
+        # refusal: the event's own, else that of an event it raised (a router that
+        # forwards a request by raising answers with the refusal of what it raised)
+        refused = [t['reason'] for t in own if t['refusal']] or \
+            [t['reason'] for t in self._taken if t['refusal']]
+        refusal = refused[-1] if refused else ''
+        # ignored: what the event itself did was only ros:ignore, nothing else
         ignored = (own[0]['reason'] if own and all(t['ignore'] for t in own) else '')
         if not handled and not refusal and event != STOP_EVENT:
             self.log.warning(f'event "{event}" was not handled in configuration '
