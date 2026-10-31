@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<scxml xmlns="http://www.w3.org/2005/07/scxml"
+       xmlns:ros="https://github.com/jerry73204/ros2_statechart/ns/1"
+       version="1.0" datamodel="python" initial="APPROACH">
+  <state id="APPROACH">
+    <ros:service_call service="charger/enable" type="std_srvs/srv/Trigger"/>
+    <ros:outcome status="succeeded failed timeout unavailable" target="docked"/>
+  </state>
+  <final id="docked"/>
+</scxml>

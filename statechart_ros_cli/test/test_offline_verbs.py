@@ -121,3 +121,28 @@ def test_verbs_are_listed():
     out = ros2('--help').stdout
     for verb in ('validate', 'diagram', 'export'):
         assert verb in out
+
+
+def test_interface_writes_a_file_that_check_accepts(tmp_path):
+    out = tmp_path / 'readme_example.interface.yaml'
+    result = ros2('interface', README, '-o', str(out))
+    assert result.returncode == 0, result.stderr
+    assert 'statechart_interface: 1' in out.read_text()
+    check = ros2('interface', README, '--check', str(out))
+    assert check.returncode == 0, check.stdout + check.stderr
+    assert check.stdout == ''
+
+
+def test_interface_check_fails_on_a_changed_chart(tmp_path):
+    out = tmp_path / 'readme_example.interface.yaml'
+    ros2('interface', README, '-o', str(out))
+    chart = tmp_path / 'changed.scxml'
+    with open(README) as f:
+        text = f.read()
+    chart.write_text(text.replace(
+        '</scxml>', '  <ros:subscribe topic="bumper" type="std_msgs/msg/Bool" event="bumper"/>'
+        '\n</scxml>'))
+    check = ros2('interface', str(chart), '--check', str(out))
+    assert check.returncode == 1
+    assert 'additive: subscribes bumper: added' in check.stdout
+    assert 'regenerate it with' in check.stdout

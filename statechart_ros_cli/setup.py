@@ -29,8 +29,8 @@ setup(
     maintainer='jerry73204',
     maintainer_email='jerry73204@gmail.com',
     description=(
-        'ros2 statechart verbs: validate, diagram, export, list, show, echo, '
-        'send.'
+        'ros2 statechart verbs: validate, diagram, export, interface, list, show, '
+        'echo, send.'
     ),
     license='Apache-2.0',
     tests_require=['pytest'],
@@ -43,6 +43,7 @@ setup(
             'validate = statechart_ros_cli.verb.validate:ValidateVerb',
             'diagram = statechart_ros_cli.verb.diagram:DiagramVerb',
             'export = statechart_ros_cli.verb.export:ExportVerb',
+            'interface = statechart_ros_cli.verb.interface:InterfaceVerb',
             'list = statechart_ros_cli.verb.list:ListVerb',
             'show = statechart_ros_cli.verb.show:ShowVerb',
             'echo = statechart_ros_cli.verb.echo:EchoVerb',

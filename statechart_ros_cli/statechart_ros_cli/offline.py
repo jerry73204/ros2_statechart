@@ -76,3 +76,26 @@ def export_plain(chart):
     """Return the expanded, extension-free SCXML of a chart."""
     spec = load_chart(chart)
     return '<?xml version="1.0" encoding="UTF-8"?>\n' + spec.plain_doc + '\n'
+
+
+def interface_text(chart, out=None):
+    """Return a chart's interface file text; print its warnings to ``out``."""
+    from statechart_ros.interface import chart_interface, dump
+    out = out or sys.stderr
+    iface = chart_interface(chart)
+    for w in iface['warnings']:
+        print(f'warning: {w}', file=out)
+    return dump(iface, chart)
+
+
+def check_interface(chart, path, out=None):
+    """Compare a chart with an interface file; print the changes; return their number."""
+    from statechart_ros.interface import chart_interface, compare, load
+    out = out or sys.stdout
+    changes = compare(load(path), chart_interface(chart))
+    for severity, message in changes:
+        print(f'{severity}: {message}', file=out)
+    if changes:
+        print(f'{path} does not match {chart}: regenerate it with `ros2 statechart '
+              f'interface {chart} -o {path}`', file=out)
+    return len(changes)

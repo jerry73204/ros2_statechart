@@ -36,6 +36,7 @@ from rclpy.executors import ExternalShutdownException, MultiThreadedExecutor
 from rclpy.lifecycle import Node as LifecycleNode
 from rclpy.lifecycle import TransitionCallbackReturn
 from rclpy.parameter import Parameter
+from statechart_ros import interface as interface_mod
 from statechart_ros import introspection
 from statechart_ros.host import destroy_waitable, qos_profile, RosHost
 from statechart_ros.loader import ChartError, load_chart
@@ -67,6 +68,7 @@ class StatechartNode(LifecycleNode):
         self.declare_parameter('datamodel_publish', Parameter.Type.STRING_ARRAY)
         self.declare_parameter('autostart', True)
         self.declare_parameter('run_as_action', '')
+        self.declare_parameter('check_interface', 5.0)
         self.spec = None
         self.runner = None
         self.host = None
@@ -80,6 +82,7 @@ class StatechartNode(LifecycleNode):
         self.structure = None
         self._run_server = None
         self._accepting = False
+        self._interface_timer = None
 
     # --- lifecycle ------------------------------------------------------------------
 
@@ -139,10 +142,12 @@ class StatechartNode(LifecycleNode):
         self._publish_status(force=True)
         self.get_logger().info(f'chart {self.spec.name} active: '
                                + ', '.join(self.runner.configuration()))
+        self._schedule_interface_check()
         return super().on_activate(state)
 
     def on_deactivate(self, state):
         self._accepting = False
+        self._cancel_interface_check()
         if self.runner is not None:
             self.runner.stop()
             self._publish_status(force=True)
@@ -157,6 +162,7 @@ class StatechartNode(LifecycleNode):
         return TransitionCallbackReturn.SUCCESS
 
     def _teardown(self):
+        self._cancel_interface_check()
         if self.runner is not None:
             try:
                 self.runner.shutdown()
@@ -178,6 +184,47 @@ class StatechartNode(LifecycleNode):
         self.runner = None
         self.host = None
         self.spec = None
+
+    # --- the interface on the robot ------------------------------------------------
+
+    def _schedule_interface_check(self):
+        delay = float(self.get_parameter('check_interface').value or 0.0)
+        if delay <= 0.0:
+            return
+        self._cancel_interface_check()
+        self._interface_timer = self.create_timer(
+            delay, self._check_interface, clock=Clock(clock_type=ClockType.STEADY_TIME))
+
+    def _cancel_interface_check(self):
+        if self._interface_timer is not None:
+            self._interface_timer.cancel()
+            self.destroy_timer(self._interface_timer)
+            self._interface_timer = None
+
+    def _check_interface(self):
+        """Warn once about each input without a publisher and each call without a server."""
+        delay = float(self.get_parameter('check_interface').value)
+        self._cancel_interface_check()
+        if self.spec is None:
+            return
+
+        def resolver(section, name):
+            if section == 'parameters_set':
+                return interface_mod.resolve(name, self.get_namespace(), self.get_name())
+            if section.startswith('services_'):
+                return self.resolve_service_name(name)
+            return self.resolve_topic_name(name)
+
+        try:
+            iface = interface_mod.chart_interface(self.spec.path)
+            problems = interface_mod.check_once(
+                self, iface, resolver,
+                sections=('subscribes', 'services_called', 'actions_called', 'parameters_set'))
+        except Exception as exc:  # noqa: B902 - a check must never stop the chart
+            self.get_logger().warning(f'interface check failed: {exc!r}')
+            return
+        for problem in problems:
+            self.get_logger().warning(f'interface, {delay:g} s after activation: {problem}')
 
     def _keep(self, destroy, entity):
         self._entities.append((destroy, entity))

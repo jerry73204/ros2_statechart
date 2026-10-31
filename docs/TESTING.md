@@ -113,3 +113,24 @@ It follows the chart's `~/status` and `~/transitions` and calls its
 `ros:service_server`). Keep simulation tests for what only the real servers
 show (does Nav2 reach the pose, does the dock succeed); run them nightly
 (`.github/workflows/nightly.yml` and `statechart_ros_nav2/test_sim/`).
+
+## Contracts: `check_graph`
+
+A package that works with a chart it does not own tests its own nodes
+against the chart's interface file ([INTERFACES.md](INTERFACES.md)), without
+the chart:
+
+```python
+from statechart_ros_testing import assert_provides, check_graph, load_interface
+
+iface = load_interface('mission.interface.yaml')
+assert_provides(test_node, iface, names=['e_stop', 'health'], namespace='/robot1')
+problems = check_graph(test_node, iface, sections=['actions_called'])
+```
+
+For each endpoint chosen by `sections` and `names`, the counterpart must be
+in the graph: a publisher of a subscribed topic with its type and a
+compatible QoS, a subscriber of a published one, a server of a called
+service or action, a client of a served one, the node of a set parameter.
+The check repeats until it passes or `timeout` (5 s) passes, since discovery
+takes time.

@@ -548,3 +548,32 @@ def test_an_invalid_chart_fails_configure(ros, tmp_path):
         assert node.runner is None
     finally:
         node.destroy_node()
+
+
+def test_missing_endpoints_are_warned_about_once_after_activation(harness):
+    body = ('<ros:subscribe topic="/flag" type="std_msgs/msg/Bool" event="flag"/>'
+            '<ros:subscribe topic="/nobody" type="std_msgs/msg/Bool" event="nobody"/>'
+            '<state id="a"><ros:on_entry call="/no_service" type="std_srvs/srv/Trigger"/>'
+            '<transition event="go" target="b"/><ros:ignore event="flag nobody"/></state>'
+            '<state id="b"><ros:action server="/fib" type="example_interfaces/action/Fibonacci"/>'
+            '<ros:outcome status="succeeded aborted canceled rejected unavailable" target="a"/>'
+            '<ros:ignore event="flag nobody go"/></state>')
+    h = harness(body, params=[('check_interface', 0.5)])
+    warnings = []
+    logger = h.node.get_logger()
+    original = logger.warning
+    logger.warning = lambda text, **kw: (warnings.append(text), original(text, **kw))
+    assert wait_for(lambda: len(warnings) >= 2, 5.0)
+    time.sleep(0.8)
+    assert sorted(warnings) == [
+        'interface, 0.5 s after activation: services_called /no_service (/no_service): '
+        'no server',
+        'interface, 0.5 s after activation: subscribes /nobody (/nobody): no publisher',
+    ]
+
+
+def test_the_interface_check_can_be_turned_off(harness):
+    h = harness('<ros:subscribe topic="/nobody" type="std_msgs/msg/Bool" event="nobody"/>'
+                '<state id="a"><ros:ignore event="nobody"/></state>',
+                params=[('check_interface', 0.0)])
+    assert h.node._interface_timer is None

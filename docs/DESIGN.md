@@ -107,8 +107,11 @@ trees, a docking server's states) remains theirs.
   `debug_events`, `status_rate_max` (Hz, default 20; status changes in
   between are coalesced), `datamodel_publish` (names of datamodel values in
   the status), `run_as_action` (an action name: the node waits for
-  `RunStatechart` goals instead of starting its chart on activation), and
-  one parameter per `ros:param`.
+  `RunStatechart` goals instead of starting its chart on activation),
+  `check_interface` (s, default 5, 0 off: after activation, warn about
+  input topics without a publisher and called services and actions without
+  a server, [INTERFACES.md](INTERFACES.md)), and one parameter per
+  `ros:param`.
 - **Composition.** A chart grows in three ways, chosen by what the parts
   share:
   - *nested states and parallel regions in one chart* when the parts share
@@ -180,6 +183,7 @@ viewer. A Foxglove panel can reuse the page's components later. Guide:
 | `validate <chart>` | all checks of [FORMAT.md](FORMAT.md) section 6; exit code for CI |
 | `diagram <chart> -o out.svg\|.md` | Mermaid, Graphviz or a Markdown transition table, with `ros:` annotations |
 | `export --plain <chart>` | the expanded, extension-free SCXML for other tools |
+| `interface <chart> [-o file] [--check file]` | the chart's interface as YAML, or a check that a committed interface file still matches ([INTERFACES.md](INTERFACES.md)) |
 | `list` | running charts |
 | `show <node>` | active configuration as a tree, running invokes |
 | `echo <node>` | transitions as they happen |
@@ -232,6 +236,8 @@ Reference: [NAV2.md](NAV2.md).
   and datamodel).
 - `launch_testing` helpers to run a chart against real servers in
   simulation and assert on its status topic.
+- Contract checks: another package tests its own nodes against a chart's
+  interface file (`check_graph`, `assert_provides`), without the chart.
 
 ## 11. Security
 
@@ -273,3 +279,4 @@ and in invoke kinds, which are Python packages installed like any other.
 | Process structure | one chart per node; other nodes invoked | statechart guarantees need one configuration and one queue |
 | Composition | child charts in the same node (`ros:chart`, own queue, stopped with the invoking state) or in another node through `RunStatechart` | a procedure reused as one step, cancelled like any invoke; sharing data or guards stays one chart |
 | Viewer | web page served by a node | works on any machine with a browser |
+| Charts and other packages | the chart is the only writer of the state; other packages share its interface (topics, services, actions, types, QoS) as a generated, committed file, checked in CI and on start | packages maintained by others drift from a chart unless what they depend on is written down and checked; the states stay free to change |

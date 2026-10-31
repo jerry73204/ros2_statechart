@@ -11,12 +11,14 @@
     <xsd:annotation><xsd:documentation>The Python class providing guards and builders: package.module:Class.</xsd:documentation></xsd:annotation>
     <xsd:complexType>
       <xsd:attribute name="class" type="xsd:string" use="required"/>
+      <xsd:attribute name="doc" type="xsd:string" use="optional"/>
     </xsd:complexType>
   </xsd:element>
   <xsd:element name="param">
     <xsd:annotation><xsd:documentation>A ROS parameter initialising the datamodel value of the same name.</xsd:documentation></xsd:annotation>
     <xsd:complexType>
       <xsd:attribute name="name" type="xsd:string" use="required"/>
+      <xsd:attribute name="doc" type="xsd:string" use="optional"/>
     </xsd:complexType>
   </xsd:element>
   <xsd:element name="subscribe">
@@ -28,6 +30,7 @@
       <xsd:attribute name="when" type="xsd:string" use="optional"/>
       <xsd:attribute name="data" type="xsd:string" use="optional"/>
       <xsd:attribute name="qos" type="xsd:string" use="optional"/>
+      <xsd:attribute name="doc" type="xsd:string" use="optional"/>
     </xsd:complexType>
   </xsd:element>
   <xsd:element name="service_server">
@@ -37,6 +40,7 @@
       <xsd:attribute name="type" type="xsd:string" use="required"/>
       <xsd:attribute name="event" type="xsd:string" use="optional"/>
       <xsd:attribute name="reply" type="xsd:string" use="optional"/>
+      <xsd:attribute name="doc" type="xsd:string" use="optional"/>
     </xsd:complexType>
   </xsd:element>
   <xsd:element name="action_server">
@@ -52,6 +56,7 @@
       <xsd:attribute name="result_status" type="xsd:string" use="optional"/>
       <xsd:attribute name="cancel_event" type="xsd:string" use="optional"/>
       <xsd:attribute name="cancel_waits" type="xsd:string" use="optional"/>
+      <xsd:attribute name="doc" type="xsd:string" use="optional"/>
     </xsd:complexType>
   </xsd:element>
   <xsd:element name="timer">
@@ -59,6 +64,7 @@
     <xsd:complexType>
       <xsd:attribute name="period" type="xsd:string" use="required"/>
       <xsd:attribute name="event" type="xsd:string" use="required"/>
+      <xsd:attribute name="doc" type="xsd:string" use="optional"/>
     </xsd:complexType>
   </xsd:element>
   <xsd:element name="action">
@@ -71,6 +77,7 @@
       <xsd:attribute name="feedback_event" type="xsd:string" use="optional"/>
       <xsd:attribute name="server_timeout" type="xsd:string" use="optional"/>
       <xsd:attribute name="cancel_timeout" type="xsd:string" use="optional"/>
+      <xsd:attribute name="doc" type="xsd:string" use="optional"/>
     </xsd:complexType>
   </xsd:element>
   <xsd:element name="service_call">
@@ -83,6 +90,7 @@
       <xsd:attribute name="success" type="xsd:string" use="optional"/>
       <xsd:attribute name="timeout" type="xsd:string" use="optional"/>
       <xsd:attribute name="server_timeout" type="xsd:string" use="optional"/>
+      <xsd:attribute name="doc" type="xsd:string" use="optional"/>
     </xsd:complexType>
   </xsd:element>
   <xsd:element name="wait_for">
@@ -93,6 +101,7 @@
       <xsd:attribute name="when" type="xsd:string" use="optional"/>
       <xsd:attribute name="timeout" type="xsd:string" use="optional"/>
       <xsd:attribute name="qos" type="xsd:string" use="optional"/>
+      <xsd:attribute name="doc" type="xsd:string" use="optional"/>
     </xsd:complexType>
   </xsd:element>
   <xsd:element name="chart">
@@ -100,6 +109,7 @@
     <xsd:complexType>
       <xsd:attribute name="src" type="xsd:string" use="required"/>
       <xsd:attribute name="autoforward" type="xsd:boolean" use="optional"/>
+      <xsd:attribute name="doc" type="xsd:string" use="optional"/>
     </xsd:complexType>
   </xsd:element>
   <xsd:element name="outcome">
@@ -108,6 +118,7 @@
       <xsd:attribute name="status" type="xsd:string" use="required"/>
       <xsd:attribute name="target" type="xsd:string" use="required"/>
       <xsd:attribute name="cond" type="xsd:string" use="optional"/>
+      <xsd:attribute name="doc" type="xsd:string" use="optional"/>
     </xsd:complexType>
   </xsd:element>
   <xsd:element name="on_entry">
@@ -123,6 +134,7 @@
       <xsd:attribute name="node" type="xsd:string" use="optional"/>
       <xsd:attribute name="qos" type="xsd:string" use="optional"/>
       <xsd:attribute name="run" type="xsd:string" use="optional"/>
+      <xsd:attribute name="doc" type="xsd:string" use="optional"/>
     </xsd:complexType>
   </xsd:element>
   <xsd:element name="on_exit">
@@ -138,6 +150,7 @@
       <xsd:attribute name="node" type="xsd:string" use="optional"/>
       <xsd:attribute name="qos" type="xsd:string" use="optional"/>
       <xsd:attribute name="run" type="xsd:string" use="optional"/>
+      <xsd:attribute name="doc" type="xsd:string" use="optional"/>
     </xsd:complexType>
   </xsd:element>
   <xsd:element name="refuse">
@@ -146,6 +159,7 @@
       <xsd:attribute name="event" type="xsd:string" use="required"/>
       <xsd:attribute name="reason" type="xsd:string" use="required"/>
       <xsd:attribute name="cond" type="xsd:string" use="optional"/>
+      <xsd:attribute name="doc" type="xsd:string" use="optional"/>
     </xsd:complexType>
   </xsd:element>
   <xsd:element name="ignore">
@@ -153,6 +167,7 @@
     <xsd:complexType>
       <xsd:attribute name="event" type="xsd:string" use="required"/>
       <xsd:attribute name="reason" type="xsd:string" use="optional"/>
+      <xsd:attribute name="doc" type="xsd:string" use="optional"/>
     </xsd:complexType>
   </xsd:element>
   <xsd:element name="after">
@@ -160,6 +175,7 @@
     <xsd:complexType>
       <xsd:attribute name="delay" type="xsd:string" use="required"/>
       <xsd:attribute name="event" type="xsd:string" use="required"/>
+      <xsd:attribute name="doc" type="xsd:string" use="optional"/>
     </xsd:complexType>
   </xsd:element>
   <xsd:element name="invoke">

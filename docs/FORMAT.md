@@ -35,7 +35,11 @@ SCXML.
    on the model object (`ros:model`). Expressions in the document are chart
    expressions (section 8): a small, validated subset of Python with
    comparisons of datamodel values, `In(...)`, no function calls.
-7. **Expansion.** The loader expands the extension into plain SCXML plus
+7. **Documentation.** Every `ros:` element accepts an optional `doc`
+   attribute: what the element means for the packages around the chart
+   (when a producer publishes, what a command does). It has no effect on
+   the run; `ros2 statechart interface` carries it ([INTERFACES.md](INTERFACES.md)).
+8. **Expansion.** The loader expands the extension into plain SCXML plus
    listener callbacks before the engine sees the document. `ros2 statechart
    export --plain` writes the expanded document, which any SCXML tool can
    read.

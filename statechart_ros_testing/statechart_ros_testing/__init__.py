@@ -13,10 +13,12 @@
 # limitations under the License.
 
 
-"""Test kit for statecharts: fakes, scenarios, property tests, launch_testing helpers."""
+"""Test kit for statecharts: fakes, scenarios, properties, launch_testing helpers, contracts."""
 
 from statechart_ros_testing.chart_test import (chart_under_test, ChartTest, ChartTestError,
                                                PENDING)
+from statechart_ros_testing.contract import assert_provides, check_graph, load_interface
 from statechart_ros_testing.scenario import run_scenario
 
-__all__ = ['chart_under_test', 'ChartTest', 'ChartTestError', 'PENDING', 'run_scenario']
+__all__ = ['assert_provides', 'chart_under_test', 'ChartTest', 'ChartTestError', 'check_graph',
+           'load_interface', 'PENDING', 'run_scenario']

@@ -85,6 +85,7 @@ OUTPUT_ATTRS = {
                   'value': Attr(STRING, required=True)},
     'run': {'run': Attr(HANDLER, required=True)},
 }
+DOC = 'doc'  # accepted on every ros: element: what it means for other packages
 CHILD_PATH = 'sc_ros_path'  # the resolved file of a ros:chart, added by the loader
 _REF = 'sc_ros_ref'  # marks a collected ros:outcome with its generated name
 INVOKE_TAGS = {
@@ -136,6 +137,7 @@ class InvokeSpec:
     kind: str
     attrs: dict
     line: int
+    doc: str = ''
 
 
 @dataclass
@@ -499,6 +501,8 @@ def _check_attrs(spec, el, table, what):
         if attr.required and not el.get(key):
             spec.finding(el.sourceline, 1, f'{what} needs the attribute "{key}"')
     for key, value in el.attrib.items():
+        if key == DOC:
+            continue
         if key not in table:
             spec.finding(el.sourceline, 1, f'{what} has no attribute "{key}"')
             continue
@@ -610,6 +614,7 @@ def _collect_ros(spec, el, parent, parent_state):
             return
         kind_name = INVOKE_TAGS[tag] or el.get('kind')
         attrs = dict(el.attrib)
+        doc = attrs.pop(DOC, '')
         if tag == 'invoke':
             attrs.pop('kind', None)
             if not kind_name:
@@ -631,7 +636,7 @@ def _collect_ros(spec, el, parent, parent_state):
         if kind_name == 'ros/chart' and attrs.get('src'):
             attrs[CHILD_PATH] = child_path(spec.path, attrs['src'])
         spec.invokes[parent_state] = InvokeSpec(parent_state, tag, kind_name, attrs,
-                                                el.sourceline)
+                                                el.sourceline, doc)
         return
     if tag not in ELEMENTS:
         spec.finding(el.sourceline, 1, f'unknown element ros:{tag}')

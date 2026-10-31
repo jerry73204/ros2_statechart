@@ -69,6 +69,11 @@ class Nav2ActionKind(ActionKind):
         return [('action', f'nav2_msgs/action/{cls.action}')]
 
     @classmethod
+    def endpoints(cls, attrs):
+        return [{'kind': 'action', 'name': attrs.get('server', cls.server),
+                 'type': f'nav2_msgs/action/{cls.action}'}]
+
+    @classmethod
     def summary(cls, attrs):
         what = attrs.get('pose') or attrs.get('poses') or attrs.get('dock_id') or \
             attrs.get('dock_pose')
@@ -334,6 +339,12 @@ class Active(InvokeKind):
     @classmethod
     def interfaces(cls, attrs):
         return [('srv', 'std_srvs/srv/Trigger')]
+
+    @classmethod
+    def endpoints(cls, attrs):
+        managers = attrs.get('managers', cls.attributes['managers'].default).split()
+        return [{'kind': 'service', 'name': m.rstrip('/') + '/is_active',
+                 'type': 'std_srvs/srv/Trigger'} for m in managers]
 
     @classmethod
     def summary(cls, attrs):

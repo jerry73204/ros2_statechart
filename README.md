@@ -101,9 +101,9 @@ ros2 statechart show /mission               # active states in the terminal
 | `statechart_ros_msgs` | structure, status and transition messages; debug services; the action to run a chart |
 | `statechart_ros` | the node that hosts a chart: loader for the `ros:` extension, one event queue, invokes, outputs, introspection, lifecycle |
 | `statechart_ros_nav2` | Nav2 action invokes, error-code names, waiting for Nav2 to be active |
-| `statechart_ros_cli` | `ros2 statechart` verbs: validate, diagram, export, list, show, echo, send |
+| `statechart_ros_cli` | `ros2 statechart` verbs: validate, diagram, export, interface, list, show, echo, send |
 | `statechart_ros_viewer` | web viewer: the diagram with active states lit, data, transition log, bag replay |
-| `statechart_ros_testing` | pytest fixtures: fake action servers, scenario runner, random event sequences against invariants |
+| `statechart_ros_testing` | pytest fixtures: fake action servers, scenario runner, random event sequences against invariants, contract checks against a chart's interface |
 | `python_statemachine_vendor` | python-statemachine pinned, so the packages can be released through the ROS buildfarm |
 
 ## Documents
@@ -111,8 +111,8 @@ ros2 statechart show /mission               # active states in the terminal
 [docs/README.md](docs/README.md) lists them all:
 [concepts](docs/CONCEPTS.md), [tutorials](docs/tutorials/README.md),
 the [format reference](docs/FORMAT.md), the guides for
-[Nav2](docs/NAV2.md), [testing](docs/TESTING.md) and the
-[viewer](docs/VIEWER.md), [migrating from SMACH-style libraries](docs/MIGRATION.md),
+[Nav2](docs/NAV2.md), [testing](docs/TESTING.md), the
+[viewer](docs/VIEWER.md) and [one chart with many packages](docs/INTERFACES.md), [migrating from SMACH-style libraries](docs/MIGRATION.md),
 [model checking notes](docs/MODEL_CHECKING.md), the [design](docs/DESIGN.md),
 the [engine facts](docs/ENGINE.md) and [releasing](docs/RELEASE.md).
 

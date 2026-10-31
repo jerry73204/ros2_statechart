@@ -129,6 +129,34 @@ class InvokeKind:
         return found
 
     @classmethod
+    def endpoints(cls, attrs):
+        """
+        Return the ROS endpoints this use touches, for the chart's interface.
+
+        Each is a dict with ``kind`` (``topic``: the chart subscribes to it;
+        ``service`` or ``action``: the chart calls it), ``name`` (as written),
+        ``type`` and, for a topic, ``qos``. The default pairs the first name
+        attribute (or its default) with the first type attribute; a kind whose
+        endpoints differ overrides it.
+        """
+        name = type_role = None
+        qos = 'default'
+        for key, spec in cls.attributes.items():
+            if spec.role == NAME and name is None:
+                name = attrs.get(key, spec.default)
+            if spec.role in TYPE_ROLES and type_role is None and attrs.get(key):
+                type_role = (TYPE_ROLES[spec.role], attrs[key])
+            if key == 'qos':
+                qos = attrs.get(key, spec.default)
+        if not name or type_role is None:
+            return []
+        kind = {'msg': 'topic', 'srv': 'service', 'action': 'action'}[type_role[0]]
+        found = {'kind': kind, 'name': name, 'type': type_role[1]}
+        if kind == 'topic':
+            found['qos'] = qos
+        return [found]
+
+    @classmethod
     def check(cls, attrs):
         """Return messages about this use beyond the attribute table (none by default)."""
         return []

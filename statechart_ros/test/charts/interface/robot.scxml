@@ -1,0 +1,41 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- A chart touching every kind of endpoint, for the interface tests. -->
+<scxml xmlns="http://www.w3.org/2005/07/scxml"
+       xmlns:ros="https://github.com/jerry73204/ros2_statechart/ns/1"
+       version="1.0" datamodel="python" initial="IDLE">
+  <ros:subscribe topic="e_stop" type="std_msgs/msg/Bool" event="e_stop" qos="latched"
+                 doc="true while the stop button is pressed"/>
+  <ros:subscribe topic="battery" type="std_msgs/msg/Float32" event="battery" qos="sensor"/>
+  <ros:service_server name="~/command" type="statechart_ros_msgs/srv/SendEvent"
+                      doc="start and stop jobs"/>
+  <ros:service_server name="reset" type="std_srvs/srv/Trigger" event="reset"/>
+  <ros:action_server name="run_job" type="example_interfaces/action/Fibonacci"
+                     event="job" result_on="done.state.JOB"/>
+  <ros:timer period="1.0" event="tick"/>
+  <state id="IDLE">
+    <ros:on_entry publish="lamp" type="std_msgs/msg/String" value="'green'" qos="latched"/>
+    <transition event="start job" target="JOB"/>
+    <transition event="dock" target="DOCK"/>
+    <ros:ignore event="stop e_stop battery tick reset"/>
+  </state>
+  <state id="JOB" initial="DRIVE">
+    <ros:on_entry call="arm/hold" type="std_srvs/srv/Trigger" doc="hold the arm while driving"/>
+    <ros:on_exit set_param="max_speed" node="/controller" value="0.5"/>
+    <state id="DRIVE">
+      <ros:action server="drive" type="example_interfaces/action/Fibonacci"/>
+      <ros:outcome status="succeeded aborted canceled rejected unavailable" target="SETTLE"/>
+    </state>
+    <state id="SETTLE">
+      <ros:wait_for topic="odom" type="std_msgs/msg/Float32" doc="stopped"/>
+      <ros:outcome status="succeeded timeout" target="END"/>
+    </state>
+    <final id="END"/>
+    <transition event="stop" target="IDLE"/>
+    <ros:ignore event="start job e_stop battery tick reset dock"/>
+  </state>
+  <state id="DOCK">
+    <ros:chart src="dock.scxml"/>
+    <ros:outcome status="docked" target="IDLE"/>
+    <ros:ignore event="start job stop e_stop battery tick reset dock"/>
+  </state>
+</scxml>
