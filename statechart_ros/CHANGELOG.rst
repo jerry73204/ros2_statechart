@@ -2,6 +2,13 @@
 Changelog for package statechart_ros
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+0.1.7 (2026-10-31)
+------------------
+* The interface of a chart (``statechart_ros.interface``): the topics it subscribes to and publishes, the services and actions it serves and calls, the parameters it sets on other nodes, child charts and user kinds included; written as YAML (``statechart_interface: 1``) and compared, each difference breaking, additive or doc (docs/INTERFACES.md).
+* ``InvokeKind.endpoints``: what a use of a kind touches, for the interface; the default pairs the kind's first name and type attributes.
+* Every ``ros:`` element accepts an optional ``doc`` attribute.
+* Node parameter ``check_interface`` (s, default 5, 0 off): once after activation, a warning for each input topic without a publisher, each called service or action without a server and each node set parameters on that is not running.
+
 0.1.6 (2026-10-28)
 ------------------
 * A refusal again follows the events an event raises, as before 0.1.5: a router that forwards a service request by raising answers with the refusal of what it raised (0.1.5 answered "accepted"). An ignore still counts only for the event that took it.

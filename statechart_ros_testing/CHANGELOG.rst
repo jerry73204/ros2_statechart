@@ -2,6 +2,10 @@
 Changelog for package statechart_ros_testing
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+0.1.7 (2026-10-31)
+------------------
+* Contract checks (``load_interface``, ``check_graph``, ``assert_provides``): a package tests its own nodes against a chart's interface file, without the chart (publishers, subscribers, servers, clients, types, QoS).
+
 0.1.6 (2026-10-28)
 ------------------
 * No changes; released with statechart_ros 0.1.6.

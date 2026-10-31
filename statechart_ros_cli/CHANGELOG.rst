@@ -2,6 +2,10 @@
 Changelog for package statechart_ros_cli
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+0.1.7 (2026-10-31)
+------------------
+* ``ros2 statechart interface CHART [-o FILE] [--check FILE]``: print a chart's interface, or exit 1 when a committed interface file no longer matches the chart.
+
 0.1.6 (2026-10-28)
 ------------------
 * No changes; released with statechart_ros 0.1.6.

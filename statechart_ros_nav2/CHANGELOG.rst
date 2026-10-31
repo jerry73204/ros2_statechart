@@ -2,6 +2,10 @@
 Changelog for package statechart_ros_nav2
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+0.1.7 (2026-10-31)
+------------------
+* The Nav2 kinds declare their endpoints (the action server, the lifecycle managers' ``is_active`` services) for the chart's interface.
+
 0.1.6 (2026-10-28)
 ------------------
 * No changes; released with statechart_ros 0.1.6.
