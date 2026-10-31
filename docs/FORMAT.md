@@ -270,6 +270,7 @@ transition of its parent for the same event.
 |---|---|
 | `src` | the child chart: a path relative to the parent's file, an absolute path or a `package://` URL |
 | `autoforward` | `true`: every event the parent processes while the state is active is also posted to the child (default `false`) |
+| `data` | a builder returning a dict: the child's initial datamodel values by `<data>` id; a key the child does not declare ends the invoke with an error |
 
 - **Life.** The child starts on entry to the state, on its own queue and
   worker, and is stopped on exit the standard way (`sc_ros.stop`): its
@@ -300,6 +301,52 @@ transition of its parent for the same event.
   and cancels its invokes. The goal's `chart` must be empty or name the
   node's own chart. The outcome statuses are then those of `ros:action`
   (`succeeded` when the child reaches a top-level final).
+
+### Slots: options from other packages
+
+```xml
+<state id="RUN_STEP">
+  <ros:slot name="step" select="step_kind" data="step_data"
+            outcomes="succeeded failed cancelled"/>
+  <ros:outcome status="succeeded" target="STEP_DONE"/>
+  <ros:outcome status="*" target="STEP_FAILED"/>
+</state>
+```
+
+`ros:slot` is a `ros:chart` whose child is picked on entry from the charts
+that installed packages register for the slot.
+
+| Attribute | Meaning |
+|---|---|
+| `name` | the slot; its options are the charts registered for it |
+| `select` | a datamodel value; its value on entry names the option |
+| `outcomes` | the slot's statuses; every option's top-level `<final>` ids must be among them (rule 5) |
+| `data` | as for `ros:chart` |
+| `autoforward` | as for `ros:chart` |
+
+A package registers options by installing
+`share/ament_index/resource_index/statechart_slots/<package>`, a YAML
+mapping from slot to option to chart (a path relative to the package's share
+directory, or a `package://` URL):
+
+```yaml
+step:
+  PASS_DOOR: charts/pass_door.scxml
+```
+
+- **Loading.** The options are resolved when the parent is loaded and
+  validated as its child charts; the set does not change while the node
+  runs. Two packages registering the same option is an error naming both;
+  a slot without options is a warning.
+- **Running.** No option under the selected name ends the invoke at once
+  with an empty status and the reason in `error_msg` (`status="*"` routes
+  it). Otherwise the option runs exactly as a `ros:chart` child.
+- **Introspection.** Each option's states are in the structure under
+  `STATE/OPTION` (`RUN_STEP/PASS_DOOR/WAIT_OPEN`), and the running option's
+  status and transitions use the same ids.
+- **Interface.** A slot's options are not in the parent's interface file
+  (they depend on what is installed); each option's package ships its own.
+- `ros2 statechart slots [SLOT]` lists the registered options.
 
 ## 6. Validation (`ros2 statechart validate`)
 

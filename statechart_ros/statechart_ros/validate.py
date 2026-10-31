@@ -272,34 +272,46 @@ def model_context(spec):
 # Child charts ----------------------------------------------------------------------
 
 def check_children(spec, check_types, check_model, seen):
-    """Validate every child chart (ros:chart) as a chart of its own, once."""
-    from statechart_ros.loader import CHILD_PATH, ChartError, load_chart
+    """Validate every child chart (ros:chart, the options of ros:slot) as a chart of its own."""
+    from statechart_ros.loader import CHILD_PATH, ChartError, SLOT_OPTIONS, load_chart
     seen = set(seen or ()) | {os.path.abspath(spec.path)}
     found = []
     for inv in spec.invokes.values():
-        if inv.kind != 'ros/chart' or not inv.attrs.get(CHILD_PATH):
+        if inv.kind == 'ros/chart' and inv.attrs.get(CHILD_PATH):
+            children = [(f'ros:chart {inv.attrs["src"]}', inv.attrs[CHILD_PATH])]
+        elif inv.kind == 'ros/slot':
+            children = [(f'ros:slot {inv.attrs.get("name")} option {option}', path)
+                        for option, path in sorted((inv.attrs.get(SLOT_OPTIONS) or {}).items())]
+        else:
             continue
-        path = inv.attrs[CHILD_PATH]
-        if os.path.abspath(path) in seen:
-            found.append(_f(spec, inv.line, 7, f'ros:chart {inv.attrs["src"]}: a chart may not '
-                                               'include itself'))
-            continue
-        try:
-            child = load_chart(path)
-        except (ChartError, OSError) as exc:
-            found.append(_f(spec, inv.line, 1, f'ros:chart {inv.attrs["src"]}: {exc}'))
-            continue
-        for el in child.inputs:
-            message = (f'ros:{el.tag} in a child chart: a child gets its events from its '
-                       'parent (autoforward)')
-            found.append(Finding(child.path, el.line, 7, message))
-        if not inv.kind or not child.states:
-            continue
-        if not any(info.tag == 'final' and info.parent is None
-                   for info in child.states.values()):
-            found.append(_f(spec, inv.line, 5, f'ros:chart {inv.attrs["src"]} has no top-level '
-                                               '<final>: it would never end'))
-        found += validate(child, check_types, check_model, seen)
+        for what, path in children:
+            if os.path.abspath(path) in seen:
+                found.append(_f(spec, inv.line, 7, f'{what}: a chart may not include itself'))
+                continue
+            try:
+                child = load_chart(path)
+            except (ChartError, OSError) as exc:
+                found.append(_f(spec, inv.line, 1, f'{what}: {exc}'))
+                continue
+            for el in child.inputs:
+                message = (f'ros:{el.tag} in a child chart: a child gets its events from its '
+                           'parent (autoforward)')
+                found.append(Finding(child.path, el.line, 7, message))
+            if not child.states:
+                continue
+            finals = [sid for sid, info in child.states.items()
+                      if info.tag == 'final' and info.parent is None]
+            if not finals:
+                found.append(_f(spec, inv.line, 5, f'{what} has no top-level <final>: it '
+                                                   'would never end'))
+            if inv.kind == 'ros/slot':
+                outcomes = (inv.attrs.get('outcomes') or '').split()
+                extra = [f for f in finals if f not in outcomes]
+                if extra:
+                    found.append(_f(spec, inv.line, 5, f'{what} ends in {", ".join(extra)}, '
+                                                       "not among the slot's outcomes "
+                                                       f'({", ".join(outcomes)})'))
+            found += validate(child, check_types, check_model, seen)
     return found
 
 

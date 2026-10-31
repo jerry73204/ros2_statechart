@@ -99,3 +99,24 @@ def check_interface(chart, path, out=None):
         print(f'{path} does not match {chart}: regenerate it with `ros2 statechart '
               f'interface {chart} -o {path}`', file=out)
     return len(changes)
+
+
+def slots_text(slot=None):
+    """Return the registered slot options as text, and the registration problems."""
+    from statechart_ros.slots import registered
+    options, problems = registered()
+    lines = []
+    for name in sorted(options):
+        if slot and name != slot:
+            continue
+        lines.append(f'{name}:')
+        for option, candidates in sorted(options[name].items()):
+            for c in candidates:
+                lines.append(f'  {option}: {c.path} ({c.package})')
+            if len(candidates) > 1:
+                problems.append(f'slot "{name}": option "{option}" is registered by more than '
+                                f'one package ({", ".join(c.package for c in candidates)})')
+    if slot and not any(line == f'{slot}:' for line in lines):
+        lines.append(f'{slot}: no options registered')
+    lines += [f'problem: {p}' for p in problems]
+    return ''.join(line + '\n' for line in lines), problems

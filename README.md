@@ -7,7 +7,7 @@ publishes on entry, which topics and services turn into events. The chart is
 run by [python-statemachine](https://github.com/fgmacedo/python-statemachine),
 used as released, inside one ROS 2 node.
 
-Status: 0.1.7, every phase of [docs/phases](docs/phases/) done (P0 to P8). Start with the [tutorials](docs/tutorials/README.md); until the packages reach the ROS apt repositories, install the Debian packages attached to each [release](https://github.com/jerry73204/ros2_statechart/releases) (Humble and Jazzy, amd64 and arm64: `sudo apt install ./ros-<distro>-*_<arch>.deb`) or build from source ([docs/RELEASE.md](docs/RELEASE.md)).
+Status: 0.1.8, every phase of [docs/phases](docs/phases/) done (P0 to P9). Start with the [tutorials](docs/tutorials/README.md); until the packages reach the ROS apt repositories, install the Debian packages attached to each [release](https://github.com/jerry73204/ros2_statechart/releases) (Humble and Jazzy, amd64 and arm64: `sudo apt install ./ros-<distro>-*_<arch>.deb`) or build from source ([docs/RELEASE.md](docs/RELEASE.md)).
 
 ## Why statecharts
 
@@ -101,7 +101,7 @@ ros2 statechart show /mission               # active states in the terminal
 | `statechart_ros_msgs` | structure, status and transition messages; debug services; the action to run a chart |
 | `statechart_ros` | the node that hosts a chart: loader for the `ros:` extension, one event queue, invokes, outputs, introspection, lifecycle |
 | `statechart_ros_nav2` | Nav2 action invokes, error-code names, waiting for Nav2 to be active |
-| `statechart_ros_cli` | `ros2 statechart` verbs: validate, diagram, export, interface, list, show, echo, send |
+| `statechart_ros_cli` | `ros2 statechart` verbs: validate, diagram, export, interface, slots, list, show, echo, send |
 | `statechart_ros_viewer` | web viewer: the diagram with active states lit, data, transition log, bag replay |
 | `statechart_ros_testing` | pytest fixtures: fake action servers, scenario runner, random event sequences against invariants, contract checks against a chart's interface |
 | `python_statemachine_vendor` | python-statemachine pinned, so the packages can be released through the ROS buildfarm |

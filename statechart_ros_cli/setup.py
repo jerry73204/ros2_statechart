@@ -18,7 +18,7 @@ package_name = 'statechart_ros_cli'
 
 setup(
     name=package_name,
-    version='0.1.7',
+    version='0.1.8',
     packages=find_packages(exclude=['test']),
     data_files=[
         ('share/ament_index/resource_index/packages', ['resource/' + package_name]),
@@ -29,7 +29,7 @@ setup(
     maintainer='jerry73204',
     maintainer_email='jerry73204@gmail.com',
     description=(
-        'ros2 statechart verbs: validate, diagram, export, interface, list, show, '
+        'ros2 statechart verbs: validate, diagram, export, interface, slots, list, show, '
         'echo, send.'
     ),
     license='Apache-2.0',
@@ -44,6 +44,7 @@ setup(
             'diagram = statechart_ros_cli.verb.diagram:DiagramVerb',
             'export = statechart_ros_cli.verb.export:ExportVerb',
             'interface = statechart_ros_cli.verb.interface:InterfaceVerb',
+            'slots = statechart_ros_cli.verb.slots:SlotsVerb',
             'list = statechart_ros_cli.verb.list:ListVerb',
             'show = statechart_ros_cli.verb.show:ShowVerb',
             'echo = statechart_ros_cli.verb.echo:EchoVerb',

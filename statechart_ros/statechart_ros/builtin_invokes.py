@@ -28,8 +28,8 @@ import queue
 import threading
 
 from statechart_ros.kinds import (
-    ACTION_TYPE, Attr, BOOL, BUILDER, ENUM, EVENT, FLOAT, GUARD, HANDLER, InvokeKind,
-    MSG_TYPE, NAME, Outcome, PATH, QOS_CHOICES, SRV_TYPE)
+    ACTION_TYPE, Attr, BOOL, BUILDER, DATA, ENUM, EVENT, FLOAT, GUARD, HANDLER, InvokeKind,
+    MSG_TYPE, NAME, Outcome, PATH, QOS_CHOICES, SRV_TYPE, STRING)
 from statechart_ros.runtime import Cancelled, to_jsonable
 
 POLL = 0.02
@@ -355,7 +355,8 @@ class ChartKind(InvokeKind):
     The child's top-level ``<final>`` states are the statuses: reaching
     ``<final id="docked">`` ends the invoke with status ``docked``, its
     donedata as ``result`` and as outcome data. The child gets the events its
-    parent processes when ``autoforward`` is true.
+    parent processes when ``autoforward`` is true, and its initial datamodel
+    values from the builder named in ``data``.
     """
 
     name = 'ros/chart'
@@ -364,6 +365,8 @@ class ChartKind(InvokeKind):
                     doc='the child chart: a path (relative to the parent) or package:// URL'),
         'autoforward': Attr(BOOL, default=False,
                             doc="forward the parent's events to the child"),
+        'data': Attr(BUILDER, doc="a builder returning the child's initial datamodel values "
+                                  'by <data> id'),
     }
     statuses = ()
 
@@ -373,64 +376,114 @@ class ChartKind(InvokeKind):
 
     @classmethod
     def statuses_for(cls, attrs):
-        from statechart_ros.loader import CHILD_PATH, ChartError, load_chart
+        from statechart_ros.loader import CHILD_PATH
         path = attrs.get(CHILD_PATH)
-        if not path:
-            return ()
-        try:
-            child = load_chart(path, load_engine=False)
-        except (ChartError, OSError):
-            return ()
-        return tuple(sid for sid, info in child.states.items()
-                     if info.tag == 'final' and info.parent is None)
+        return _finals(path) if path else ()
+
+    def child_paths(self):
+        """Return the child charts by option name ('' for a ros:chart)."""
+        from statechart_ros.loader import CHILD_PATH
+        return {'': self.attrs[CHILD_PATH]}
 
     def setup(self):
+        self.children = {}
+        self.current = None
+        for option, path in self.child_paths().items():
+            self.children[option] = self._child_runner(option, path)
+        self.autoforward = self.attr('autoforward')
+
+    def _child_runner(self, option, path):
         from statechart_ros.host import ChildHost
-        from statechart_ros.loader import CHILD_PATH, load_chart
+        from statechart_ros.loader import load_chart
         from statechart_ros.runtime import ChartRunner
         from statechart_ros.validate import import_model
         parent = self.host.runner
-        self.child_spec = load_chart(self.attrs[CHILD_PATH])
+        spec = load_chart(path)
         user = None
-        if self.child_spec.model_class:
-            cls = import_model(self.child_spec.model_class)
+        if spec.model_class:
+            cls = import_model(spec.model_class)
             try:
                 user = cls(self.host.node)
             except TypeError:
                 user = cls()
-        self.child_host = ChildHost(self.host)
-        self.runner = ChartRunner(self.child_spec, user, self.child_host)
+        runner = ChartRunner(spec, user, ChildHost(self.host))
         if hasattr(self.host, 'setup_outputs'):
-            self.host.setup_outputs(self.child_spec)
-        for kind in self.runner.kinds.values():
+            self.host.setup_outputs(spec)
+        for kind in runner.kinds.values():
             kind.setup()
-        prefix = self.state_id
-        self.runner.status_observers.append(parent._status_changed)
-        self.runner.observers.append(lambda record: _forward_record(parent, prefix, record))
-        self.autoforward = self.attr('autoforward')
+        prefix = self.state_id + (f'/{option}' if option else '')
+        runner.status_observers.append(parent._status_changed)
+        runner.observers.append(lambda record: _forward_record(parent, prefix, record))
+        return runner
+
+    @property
+    def runner(self):
+        """Return the child chart's runner; for a slot, the last option's."""
+        current = getattr(self, 'current', None)
+        if current is not None:
+            return current[1]
+        children = getattr(self, 'children', {})
+        return children.get('') if children else None
 
     def teardown(self):
-        runner = getattr(self, 'runner', None)
-        if runner is None:
-            return
-        runner.shutdown()
-        for kind in runner.kinds.values():
-            kind.teardown()
+        for runner in getattr(self, 'children', {}).values():
+            runner.shutdown()
+            for kind in runner.kinds.values():
+                kind.teardown()
+        self.children = {}
+        self.current = None
 
     def child_snapshot(self):
-        runner = getattr(self, 'runner', None)
-        if runner is None or not runner.running:
+        current = getattr(self, 'current', None)
+        if current is None or not current[1].running:
             return None
-        return runner.snapshot()
+        option, runner = current
+        snapshot = runner.snapshot()
+        if option:
+            snapshot['active'] = [f'{option}/{s}' for s in snapshot['active']]
+            snapshot['invokes'] = [dict(i, state=f'{option}/{i["state"]}')
+                                   for i in snapshot['invokes']]
+        return snapshot
 
     def forward(self, event, data):
-        runner = getattr(self, 'runner', None)
-        if self.autoforward and runner is not None and runner.running:
-            runner.post(event, data)
+        current = getattr(self, 'current', None)
+        if self.autoforward and current is not None and current[1].running:
+            current[1].post(event, data)
+
+    def select(self, invocation):
+        """Return the option to run ('' for a ros:chart)."""
+        return ''
+
+    def engine_class(self, runner, invocation):
+        """Return the child's engine class for this run: its datamodel with ``data``."""
+        if not self.attrs.get('data'):
+            return None
+        from statechart_ros.loader import ChartError, load_chart, load_engine_class
+        built = self.host.runner.call_model(self.attrs['data'], cancelled=invocation.cancelled)
+        values = dict(built or {})
+        if not values:
+            return None
+        unknown = sorted(set(values) - set(runner.spec.data))
+        if unknown:
+            raise ValueError(f'data for values the child chart does not declare: '
+                             f'{", ".join(unknown)}')
+        try:
+            variant = load_chart(runner.spec.path, params=values, load_engine=False)
+            return load_engine_class(variant)
+        except ChartError as exc:
+            raise ValueError(f'the child chart with this data: {exc}') from None
 
     def run(self, invocation):
-        runner = self.runner
-        runner.start()
+        option = self.select(invocation)
+        runner = self.children.get(option)
+        if runner is None:
+            return Outcome('', error_msg=f'no option "{option}" in slot "{self.attrs["name"]}"')
+        try:
+            engine_class = self.engine_class(runner, invocation)
+        except ValueError as exc:
+            return Outcome('', error_msg=str(exc))
+        self.current = (option, runner)
+        runner.start(engine_class=engine_class)
         while True:
             if invocation.cancelled.wait(POLL):
                 runner.stop()
@@ -441,6 +494,60 @@ class ChartKind(InvokeKind):
                     return Outcome('', error_msg='the child chart stopped without a final '
                                                  'state')
                 return Outcome(final, result=dict(donedata), data=dict(donedata))
+
+
+class SlotKind(ChartKind):
+    """
+    Run the option of a slot that the datamodel selects; options come from packages.
+
+    Installed packages register charts for the slot (``statechart_ros.slots``);
+    on entry the value of the datamodel value named in ``select`` picks one,
+    which then runs exactly as a ``ros:chart`` child. The statuses are the
+    slot's ``outcomes``; no option of that name ends the invoke with an error.
+    """
+
+    name = 'ros/slot'
+    attributes = {
+        'name': Attr(STRING, required=True, doc='the slot; its options are registered charts'),
+        'select': Attr(DATA, required=True,
+                       doc='a datamodel value whose value on entry names the option'),
+        'outcomes': Attr(STRING, required=True,
+                         doc="the slot's statuses; every option's finals are among them"),
+        'autoforward': Attr(BOOL, default=False,
+                            doc="forward the parent's events to the option"),
+        'data': Attr(BUILDER, doc="a builder returning the option's initial datamodel values "
+                                  'by <data> id'),
+    }
+
+    @classmethod
+    def summary(cls, attrs):
+        return {'target': attrs.get('name', ''), 'type': 'slot'}
+
+    @classmethod
+    def statuses_for(cls, attrs):
+        return tuple((attrs.get('outcomes') or '').split())
+
+    def child_paths(self):
+        from statechart_ros.loader import SLOT_OPTIONS
+        return dict(self.attrs.get(SLOT_OPTIONS) or {})
+
+    def select(self, invocation):
+        runner = self.host.runner
+        name = self.attrs['select']
+        value = runner.run_in_worker(lambda: getattr(runner.model, name, None),
+                                     cancelled=invocation.cancelled)
+        return '' if value is None else str(value)
+
+
+def _finals(path):
+    """Return the ids of a chart's top-level finals (none if it cannot be read)."""
+    from statechart_ros.loader import ChartError, load_chart
+    try:
+        child = load_chart(path, load_engine=False)
+    except (ChartError, OSError):
+        return ()
+    return tuple(sid for sid, info in child.states.items()
+                 if info.tag == 'final' and info.parent is None)
 
 
 def _forward_record(parent, prefix, record):
@@ -460,4 +567,4 @@ def _forward_record(parent, prefix, record):
             parent.log.error(f'statechart observer failed: {exc!r}')
 
 
-KINDS = [ActionKind, ServiceCallKind, WaitForKind, ChartKind]
+KINDS = [ActionKind, ServiceCallKind, WaitForKind, ChartKind, SlotKind]

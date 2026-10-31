@@ -278,5 +278,6 @@ and in invoke kinds, which are Python packages installed like any other.
 | Unhandled events | an error unless refused or ignored | a robot must answer every command |
 | Process structure | one chart per node; other nodes invoked | statechart guarantees need one configuration and one queue |
 | Composition | child charts in the same node (`ros:chart`, own queue, stopped with the invoking state) or in another node through `RunStatechart` | a procedure reused as one step, cancelled like any invoke; sharing data or guards stays one chart |
+| Extension by other packages | slots: a state names a slot, packages register child charts for it in the ament resource index, the datamodel picks one on entry | new behaviour (a customer's maneuver) ships as a package without editing the parent chart; the options are resolved and validated when the parent loads, so the checks stay whole |
 | Viewer | web page served by a node | works on any machine with a browser |
 | Charts and other packages | the chart is the only writer of the state; other packages share its interface (topics, services, actions, types, QoS) as a generated, committed file, checked in CI and on start | packages maintained by others drift from a chart unless what they depend on is written down and checked; the states stay free to change |

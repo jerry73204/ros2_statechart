@@ -146,3 +146,23 @@ def test_interface_check_fails_on_a_changed_chart(tmp_path):
     assert check.returncode == 1
     assert 'additive: subscribes bumper: added' in check.stdout
     assert 'regenerate it with' in check.stdout
+
+
+def test_slots_lists_the_registered_options(tmp_path, monkeypatch):
+    index = tmp_path / 'share' / 'ament_index' / 'resource_index'
+    for package, option in (('steps_a', 'PASS_DOOR'), ('steps_b', 'PASS_DOOR'),
+                            ('steps_b', 'HORN')):
+        (index / 'statechart_slots').mkdir(parents=True, exist_ok=True)
+        path = index / 'statechart_slots' / package
+        old = path.read_text() if path.exists() else ''
+        path.write_text(old + ('step:\n' if not old else '') + f'  {option}: charts/x.scxml\n')
+    monkeypatch.setenv('AMENT_PREFIX_PATH', os.pathsep.join(
+        [str(tmp_path), os.environ.get('AMENT_PREFIX_PATH', '')]))
+    result = ros2('slots', 'step')
+    assert result.returncode == 1, result.stdout + result.stderr
+    lines = result.stdout.splitlines()
+    assert lines[0] == 'step:'
+    assert f'  HORN: {tmp_path}/share/steps_b/charts/x.scxml (steps_b)' in lines
+    assert ('problem: slot "step": option "PASS_DOOR" is registered by more than one package '
+            '(steps_a, steps_b)') in lines
+    assert ros2('slots', 'nothing').stdout == 'nothing: no options registered\n'

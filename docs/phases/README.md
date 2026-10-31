@@ -15,6 +15,7 @@ goal, what it delivers, the checks that close it, and what it leaves out.
 | [P6](P6-composition.md) | child charts, charts hosted as actions | P2 |
 | [P7](P7-release.md) | documentation, tutorials, buildfarm release | P3 to P6 |
 | [P8](P8-interfaces.md) | a chart's interface as a file, `interface` verb and `--check`, contract checks for other packages, a check on the robot | P7 |
+| [P9](P9-slots.md) | slots: options registered by other packages, picked by the datamodel on entry; `data` for child charts | P6, P8 |
 
 P3, P4, P5 and P6 can proceed in parallel once P2 is done.
 

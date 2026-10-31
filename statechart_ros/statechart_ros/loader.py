@@ -87,10 +87,11 @@ OUTPUT_ATTRS = {
 }
 DOC = 'doc'  # accepted on every ros: element: what it means for other packages
 CHILD_PATH = 'sc_ros_path'  # the resolved file of a ros:chart, added by the loader
+SLOT_OPTIONS = 'sc_ros_options'  # a ros:slot's options, name -> chart file, added by the loader
 _REF = 'sc_ros_ref'  # marks a collected ros:outcome with its generated name
 INVOKE_TAGS = {
     'action': 'ros/action', 'service_call': 'ros/service_call', 'wait_for': 'ros/wait_for',
-    'chart': 'ros/chart', 'invoke': None,
+    'chart': 'ros/chart', 'slot': 'ros/slot', 'invoke': None,
 }
 
 
@@ -328,39 +329,54 @@ class ChartSpec:
 
 
 def _nest_children(spec, structure, depth, prefix=''):
-    """Add the states of child charts (ros:chart), qualified by their invoking state."""
+    """Add the states of child charts (ros:chart, slot options), qualified by their state."""
     if depth > 8:
         return
     by_id = {s['id']: s for s in structure['states']}
     for state, inv in spec.invokes.items():
-        if inv.kind != 'ros/chart' or not inv.attrs.get(CHILD_PATH):
-            continue
-        try:
-            child = load_chart(inv.attrs[CHILD_PATH], load_engine=False)
-        except (ChartError, OSError):
-            continue
-        sub = child.structure()
-        owner = prefix + state
-        qualify = (lambda sid, owner=owner: f'{owner}/{sid}')
-        for s in sub['states']:
-            entry = dict(s)
-            entry['id'] = qualify(s['id'])
-            entry['parent'] = qualify(s['parent']) if s['parent'] else owner
-            entry['children'] = [qualify(c) for c in s['children']]
-            entry['initial'] = [qualify(i) for i in s['initial']]
-            entry['chart'] = qualify(s['chart']) if s.get('chart') else owner
-            structure['states'].append(entry)
-            if not s['parent'] and owner in by_id:
-                by_id[owner]['children'].append(entry['id'])
-        for t in sub['transitions']:
-            entry = dict(t)
-            entry['source'] = qualify(t['source'])
-            entry['targets'] = [qualify(x) for x in t['targets']]
-            structure['transitions'].append(entry)
-        if owner in by_id:
-            by_id[owner].setdefault('initial', [])
-            if not by_id[owner]['initial']:
-                by_id[owner]['initial'] = [qualify(i) for i in sub['initial']]
+        if inv.kind == 'ros/chart' and inv.attrs.get(CHILD_PATH):
+            _nest_child(structure, by_id, prefix + state, inv.attrs[CHILD_PATH])
+        elif inv.kind == 'ros/slot':
+            owner = prefix + state
+            for option, path in sorted((inv.attrs.get(SLOT_OPTIONS) or {}).items()):
+                group = f'{owner}/{option}'
+                entry = {'id': group, 'kind': 'compound', 'parent': owner, 'initial': [],
+                         'history': '', 'children': [], 'line': inv.line, 'chart': owner,
+                         'option': option}
+                structure['states'].append(entry)
+                by_id[group] = entry
+                if owner in by_id:
+                    by_id[owner]['children'].append(group)
+                _nest_child(structure, by_id, group, path)
+
+
+def _nest_child(structure, by_id, owner, path):
+    """Add one child chart's states and transitions under ``owner``."""
+    try:
+        child = load_chart(path, load_engine=False)
+    except (ChartError, OSError):
+        return
+    sub = child.structure()
+    qualify = (lambda sid, owner=owner: f'{owner}/{sid}')
+    for s in sub['states']:
+        entry = dict(s)
+        entry['id'] = qualify(s['id'])
+        entry['parent'] = qualify(s['parent']) if s['parent'] else owner
+        entry['children'] = [qualify(c) for c in s['children']]
+        entry['initial'] = [qualify(i) for i in s['initial']]
+        entry['chart'] = qualify(s['chart']) if s.get('chart') else owner
+        structure['states'].append(entry)
+        if not s['parent'] and owner in by_id:
+            by_id[owner]['children'].append(entry['id'])
+    for t in sub['transitions']:
+        entry = dict(t)
+        entry['source'] = qualify(t['source'])
+        entry['targets'] = [qualify(x) for x in t['targets']]
+        structure['transitions'].append(entry)
+    if owner in by_id:
+        by_id[owner].setdefault('initial', [])
+        if not by_id[owner]['initial']:
+            by_id[owner]['initial'] = [qualify(i) for i in sub['initial']]
 
 
 def _kind_of(info):
@@ -635,6 +651,8 @@ def _collect_ros(spec, el, parent, parent_state):
             return
         if kind_name == 'ros/chart' and attrs.get('src'):
             attrs[CHILD_PATH] = child_path(spec.path, attrs['src'])
+        if kind_name == 'ros/slot' and attrs.get('name'):
+            attrs[SLOT_OPTIONS] = _slot_options(spec, el.sourceline, attrs['name'])
         spec.invokes[parent_state] = InvokeSpec(parent_state, tag, kind_name, attrs,
                                                 el.sourceline, doc)
         return
@@ -691,6 +709,18 @@ def _collect_ros(spec, el, parent, parent_state):
             delay = el.get('delay') or 0.0
         spec.afters.setdefault(parent_state, []).append(
             AfterSpec(parent_state, delay, el.get('event'), el.sourceline))
+
+
+def _slot_options(spec, line, slot):
+    """Resolve the options registered for a slot; report conflicts and an empty slot."""
+    from statechart_ros.slots import options_for, RESOURCE_TYPE
+    found, problems = options_for(slot)
+    for message in problems:
+        spec.finding(line, 1, message)
+    if not found and not problems:
+        spec.finding(line, 1, f'ros:slot "{slot}" has no options: no installed package '
+                              f'registers one ({RESOURCE_TYPE} in the ament index)', 'warning')
+    return {name: option.path for name, option in found.items()}
 
 
 class _AttrView:

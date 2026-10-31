@@ -78,3 +78,4 @@ events from the start again.
 | `echo /patrol [-n N] [--timeout S]` | transitions as they happen: time, event, data, what was taken, or why it was refused or ignored |
 | `send /patrol start '{"key": 1}'` | a debug event (needs `debug_events:=true`); prints handled, refused or ignored with the reason, or not handled, and the configuration; exit code 0, 1 (error) or 2 (not handled) |
 | `validate`, `diagram`, `export --plain`, `interface` | the offline verbs (FORMAT.md section 6, DESIGN.md section 7, INTERFACES.md) |
+| `slots [SLOT]` | the options installed packages register for slots (FORMAT.md section 5) |

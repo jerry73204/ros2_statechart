@@ -109,6 +109,18 @@
     <xsd:complexType>
       <xsd:attribute name="src" type="xsd:string" use="required"/>
       <xsd:attribute name="autoforward" type="xsd:boolean" use="optional"/>
+      <xsd:attribute name="data" type="xsd:string" use="optional"/>
+      <xsd:attribute name="doc" type="xsd:string" use="optional"/>
+    </xsd:complexType>
+  </xsd:element>
+  <xsd:element name="slot">
+    <xsd:annotation><xsd:documentation>Invoke: run the option of a slot, registered by an installed package, that the datamodel value select names.</xsd:documentation></xsd:annotation>
+    <xsd:complexType>
+      <xsd:attribute name="name" type="xsd:string" use="required"/>
+      <xsd:attribute name="select" type="xsd:string" use="required"/>
+      <xsd:attribute name="outcomes" type="xsd:string" use="required"/>
+      <xsd:attribute name="autoforward" type="xsd:boolean" use="optional"/>
+      <xsd:attribute name="data" type="xsd:string" use="optional"/>
       <xsd:attribute name="doc" type="xsd:string" use="optional"/>
     </xsd:complexType>
   </xsd:element>

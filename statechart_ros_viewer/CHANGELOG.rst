@@ -2,6 +2,10 @@
 Changelog for package statechart_ros_viewer
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+0.1.8 (2026-11-01)
+------------------
+* No changes; released with statechart_ros 0.1.8.
+
 0.1.7 (2026-10-31)
 ------------------
 * No changes; released with statechart_ros 0.1.7.

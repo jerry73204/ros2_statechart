@@ -2,6 +2,10 @@
 Changelog for package statechart_ros_cli
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+0.1.8 (2026-11-01)
+------------------
+* ``ros2 statechart slots [SLOT]``: the options installed packages register for slots, and conflicting registrations (exit 1).
+
 0.1.7 (2026-10-31)
 ------------------
 * ``ros2 statechart interface CHART [-o FILE] [--check FILE]``: print a chart's interface, or exit 1 when a committed interface file no longer matches the chart.

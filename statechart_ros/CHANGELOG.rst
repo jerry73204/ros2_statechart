@@ -2,6 +2,11 @@
 Changelog for package statechart_ros
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+0.1.8 (2026-11-01)
+------------------
+* Slots (``ros:slot``): a state runs the child chart that the datamodel value ``select`` names, from the options installed packages register under ``statechart_slots`` in the ament resource index; the slot's ``outcomes`` are its statuses. Options are resolved and validated with the parent (finals among the outcomes, no inputs of their own); two packages registering one option is an error, a slot without options a warning. The options' states appear under ``STATE/OPTION`` in the structure and the status (FORMAT.md section 5, docs/phases/P9-slots.md).
+* ``data`` on ``ros:chart`` and ``ros:slot``: a builder whose dict sets the child's initial datamodel values; a key the child does not declare ends the invoke with an error.
+
 0.1.7 (2026-10-31)
 ------------------
 * The interface of a chart (``statechart_ros.interface``): the topics it subscribes to and publishes, the services and actions it serves and calls, the parameters it sets on other nodes, child charts and user kinds included; written as YAML (``statechart_interface: 1``) and compared, each difference breaking, additive or doc (docs/INTERFACES.md).
