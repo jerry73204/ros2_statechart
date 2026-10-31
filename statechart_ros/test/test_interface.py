@@ -174,3 +174,19 @@ def test_the_interface_test_chart_validates():
     from statechart_ros.validate import errors, validate
     spec = load_chart(ROBOT)
     assert errors(validate(spec)) == []
+
+
+def test_a_service_template_lists_the_values_its_callers_send(tmp_path):
+    path = tmp_path / 'templates.scxml'
+    path.write_text(doc(
+        '<ros:service_server name="control" type="std_srvs/srv/Trigger" '
+        'event="control.{command}"/>'
+        '<ros:service_server name="command" type="statechart_ros_msgs/srv/SendEvent"/>'
+        '<state id="a"><transition event="control.start control.stop" target="a"/>'
+        '<transition event="go" target="a"/></state>', model=False))
+    served = interface.chart_interface(str(path))['services_served']
+    assert served[0] == {'name': 'command', 'type': 'statechart_ros_msgs/srv/SendEvent',
+                         'commands': ['control.start', 'control.stop', 'go']}
+    assert served[1] == {'name': 'control', 'type': 'std_srvs/srv/Trigger',
+                         'commands': ['start', 'stop']}
+    assert interface.commands('{a}.{b}', ['x.y', 'z']) == ['x.y']

@@ -26,6 +26,7 @@ starts ROS except ``check_graph``, which receives a node.
 """
 
 import os
+import re
 import time
 
 from statechart_ros import kinds as kinds_mod
@@ -79,7 +80,7 @@ def _collect(spec, result, warnings, depth):
             event = el.get('event')
             if not event or '{' in event:
                 # the request names the event: the commands are part of the contract
-                entry['commands'] = spec.command_events()
+                entry['commands'] = commands(event, spec.command_events())
             _add(result, warnings, 'services_served', entry)
         elif el.tag == 'action_server':
             _add(result, warnings, 'actions_served', {
@@ -124,6 +125,26 @@ def _collect(spec, result, warnings, depth):
             if ep['kind'] == 'topic':
                 entry['qos'] = ep.get('qos', 'default')
             _add(result, warnings, section, entry)
+
+
+def commands(template, events):
+    """
+    Return what callers of a service may send, given its event template.
+
+    Without a template (``SendEvent``) every command event; with one field
+    (``control.{command}``) the field's values of the events that match it;
+    with several fields the matching event names.
+    """
+    if not template:
+        return list(events)
+    fields = re.findall(r'\{(\w+)\}', template)
+    pattern = re.compile('^' + re.sub(r'\\\{\w+\\\}', '([^ ]+)', re.escape(template)) + '$')
+    found = []
+    for ev in events:
+        m = pattern.match(ev)
+        if m:
+            found.append(m.group(1) if len(fields) == 1 else ev)
+    return sorted(set(found))
 
 
 def _key(section, entry):
